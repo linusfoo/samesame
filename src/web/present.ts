@@ -19,12 +19,7 @@ const CONDITION: Record<MatchedListing["condition"], string> = {
   used: "used",
 };
 
-/** "Sony WH-1000XM6", without repeating a brand the name already starts with. */
-export function productName(p: { brand: string; name: string }): string {
-  const brand = p.brand.trim();
-  const name = p.name.trim();
-  return brand && !name.toLowerCase().startsWith(brand.toLowerCase()) ? `${brand} ${name}` : name;
-}
+export { productName } from "../core/listing";
 
 /** "Local warranty, new." */
 export function describeUnit(l: MatchedListing): string {

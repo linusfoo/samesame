@@ -27,6 +27,8 @@ const base: ItemState = {
   quota: null,
   quotaLeft: { firecrawl: 21, jina: 63, browser: 12 },
   sourcesConfigured: { search: true, browser: true, llm: true },
+  chat: [],
+  chatBusy: false,
 };
 
 function product(

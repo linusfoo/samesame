@@ -29,7 +29,7 @@ import type { AgentTool } from "./tools/registry";
 export type { ResearchInput } from "../core/request";
 
 export type AgentTraceEvent = TraceEvent & {
-  agent: "discovery" | "matcher" | "candidates";
+  agent: "discovery" | "matcher" | "candidates" | "chat";
   /** Which product the event belongs to when several run at once. */
   item?: string;
 };

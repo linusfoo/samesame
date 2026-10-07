@@ -27,6 +27,8 @@ export type TraceEvent = {
 export type AgentRunOptions<T> = {
   model: Model;
   system: string;
+  /** Earlier turns of a conversation, sent between the system prompt and `user`. */
+  history?: ChatMessage[];
   user: string;
   tools: AgentTool[];
   schema: z.ZodType<T>;
@@ -71,6 +73,7 @@ export async function runBoundedAgent<T>(opts: AgentRunOptions<T>): Promise<Agen
 
   const messages: ChatMessage[] = [
     { role: "system", content: opts.system },
+    ...(opts.history ?? []),
     { role: "user", content: opts.user },
   ];
 

@@ -3,7 +3,8 @@
  *
  * Every call goes through the daily quota gate. web_search uses Firecrawl.
  * read_page tries Jina Reader, then Firecrawl scrape, then Browser Rendering,
- * and only opens http(s) URLs on hosts that came back from a search in this run.
+ * and only opens http(s) URLs on hosts that came back from a search in this run
+ * (or that the caller already trusts, such as listings found by an earlier run).
  */
 
 import type { Tool } from "../../core/quota";
@@ -25,7 +26,7 @@ const MIN_PAGE_CHARS = 200;
 
 type Reader = { name: string; tool: Tool; read: ((url: string) => Promise<string>) | null; label: (url: string) => string };
 
-export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
+export function buildTools(io: ToolIO, quota: QuotaGate, knownUrls: string[] = []): AgentTool[] {
   const seenHosts = new Set<string>();
   const remember = (urls: string[]) => {
     for (const u of urls) {
@@ -33,6 +34,7 @@ export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
       if (host) seenHosts.add(host);
     }
   };
+  remember(knownUrls);
 
   const readers: Reader[] = [
     { name: "reader", tool: "jina", read: io.readPage, label: (u) => u },

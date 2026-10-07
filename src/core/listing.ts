@@ -120,3 +120,10 @@ export function pinnedFromRequest(query: string, description: string): Pinned {
   const v = detectVariant(`${query} ${description}`);
   return { storage: Boolean(v.storage), size: Boolean(v.size) };
 }
+
+/** "Sony WH-1000XM6", without repeating a brand the name already starts with. */
+export function productName(p: { brand: string; name: string }): string {
+  const brand = p.brand.trim();
+  const name = p.name.trim();
+  return brand && !name.toLowerCase().startsWith(brand.toLowerCase()) ? `${brand} ${name}` : name;
+}

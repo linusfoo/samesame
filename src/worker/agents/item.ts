@@ -4,13 +4,18 @@
  *
  * Model mode researches one product. Category mode first proposes candidate
  * models, then researches the shopper's picks (up to two) in parallel.
+ * Follow-up questions about the results are kept with the search; a new
+ * search starts a fresh conversation.
  */
 
 import { Agent, callable } from "agents";
+import { appendTurns, hasChatData, parseQuestion, type ChatContext, type ChatTurn } from "../../core/chat";
 import type { MatchGroups, MatchedListing } from "../../core/match";
 import { canUse, consume, currentQuota, remaining, type QuotaState, type Tool, type Usage } from "../../core/quota";
+import { productName } from "../../core/listing";
 import { checkPicks, parseResearchInput, type Mode, type ResearchInput } from "../../core/request";
 import type { Candidate, DiscoveryResult } from "../../core/schemas";
+import { runChat } from "../chat";
 import { openCodeModel } from "../llm";
 import {
   candidateInput,
@@ -57,6 +62,10 @@ export type ItemState = {
   quota: QuotaState | null;
   quotaLeft: Usage | null;
   sourcesConfigured: { search: boolean; browser: boolean; llm: boolean };
+  /** Follow-up questions and answers about this search. */
+  chat: ChatTurn[];
+  /** A question is being answered. */
+  chatBusy: boolean;
 };
 
 const MAX_TRACE_IN_STATE = 80;
@@ -77,6 +86,8 @@ export class ItemAgent extends Agent<Env, ItemState> {
     quota: null,
     quotaLeft: null,
     sourcesConfigured: { search: false, browser: false, llm: false },
+    chat: [],
+    chatBusy: false,
   };
 
   async onStart() {
@@ -95,8 +106,16 @@ export class ItemAgent extends Agent<Env, ItemState> {
     // State saved before category mode had product/groups at the top level; start those fresh.
     const old = this.state as Partial<ItemState>;
     const fresh = !Array.isArray(old.products);
+    const base = fresh ? this.initialState : this.state;
     this.setState({
-      ...(fresh ? this.initialState : this.state),
+      ...base,
+      // State saved before the chat existed has no conversation yet.
+      chat: Array.isArray(base.chat) ? base.chat : [],
+      // An answer cannot survive an eviction either.
+      chatBusy: false,
+      ...(base.chatBusy
+        ? { chat: appendTurns(base.chat ?? [], { role: "assistant", text: "The answer was interrupted. Ask again.", at: Date.now(), failed: true }) }
+        : {}),
       quota,
       quotaLeft: remaining(quota),
       sourcesConfigured: this.sourcesConfigured(),
@@ -161,6 +180,54 @@ export class ItemAgent extends Agent<Env, ItemState> {
     });
     await this.queue("runCompareTask", { indexes: picks.value });
     return { started: true };
+  }
+
+  @callable()
+  async ask(raw: unknown): Promise<{ started: boolean; reason?: string }> {
+    if (this.state.status === "running") return { started: false, reason: "wait for the search to finish" };
+    if (this.state.chatBusy) return { started: false, reason: "still answering the last question" };
+    if (!hasChatData(this.chatContext())) return { started: false, reason: "search for a product first" };
+    if (!this.env.OPENCODE_API_KEY) return { started: false, reason: "OPENCODE_API_KEY is not set" };
+    const question = parseQuestion(raw);
+    if (!question.ok) return { started: false, reason: question.reason };
+
+    this.setState({
+      ...this.state,
+      chat: appendTurns(this.state.chat, { role: "user", text: question.value, at: Date.now() }),
+      chatBusy: true,
+    });
+    await this.queue("runChatTask", { question: question.value });
+    return { started: true };
+  }
+
+  async runChatTask({ question }: { question: string }) {
+    let turn: ChatTurn;
+    try {
+      const { model, tools, onEvent } = this.deps(this.chatListingUrls());
+      const outcome = await runChat(question, this.chatContext(), this.state.chat, { model, tools, onEvent });
+      turn = outcome.ok
+        ? { role: "assistant", text: outcome.answer, sources: outcome.sources, at: Date.now() }
+        : { role: "assistant", text: `Couldn't answer: ${outcome.error}`, at: Date.now(), failed: true };
+    } catch (err) {
+      turn = { role: "assistant", text: `Couldn't answer: ${String(err)}`, at: Date.now(), failed: true };
+    }
+    this.setState({ ...this.state, chat: appendTurns(this.state.chat, turn), chatBusy: false });
+  }
+
+  private chatContext(): ChatContext {
+    return {
+      input: this.state.input,
+      candidates: this.state.candidates,
+      products: this.state.products.map((p) => ({
+        name: p.product ? productName(p.product) : p.query,
+        modelNumber: p.product?.modelNumber ?? null,
+        groups: p.groups,
+      })),
+    };
+  }
+
+  private chatListingUrls(): string[] {
+    return this.state.products.flatMap((p) => (p.groups ? Object.values(p.groups).flat().map((l) => l.url) : []));
   }
 
   async runStartTask(input: ResearchInput) {
@@ -260,7 +327,8 @@ export class ItemAgent extends Agent<Env, ItemState> {
     this.setState({ ...this.state, products });
   }
 
-  private deps(): ResearchDeps {
+  /** `knownUrls`: pages read_page may open without a search finding them first. */
+  private deps(knownUrls: string[] = []): ResearchDeps {
     const io: ToolIO = {
       search: this.env.FIRECRAWL_API_KEY ? (q) => fetchFirecrawlSearch(this.env.FIRECRAWL_API_KEY!, q) : null,
       scrapePage: this.env.FIRECRAWL_API_KEY ? (u) => fetchFirecrawlScrape(this.env.FIRECRAWL_API_KEY!, u) : null,
@@ -272,7 +340,7 @@ export class ItemAgent extends Agent<Env, ItemState> {
     };
     return {
       model: openCodeModel(this.env.OPENCODE_API_KEY!),
-      tools: buildTools(io, { tryUse: (tool) => this.tryUseQuota(tool) }),
+      tools: buildTools(io, { tryUse: (tool) => this.tryUseQuota(tool) }, knownUrls),
       onPhase: (phase) => this.setState({ ...this.state, phase }),
       onEvent: (event) =>
         this.setState({ ...this.state, trace: [...this.state.trace, event].slice(-MAX_TRACE_IN_STATE) }),
