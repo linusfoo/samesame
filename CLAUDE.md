@@ -3,7 +3,7 @@ Build story 1 first, then stop so I can try it. Plan before you code, commit in 
 
 ## Conventions
 - TypeScript throughout. Frontend is React + Vite; backend is a Cloudflare Worker with the Agents SDK (Durable Objects). Deploy with `npm run deploy`.
-- Runtime dependencies are accepted here (agents, react, zod, and @modelcontextprotocol/sdk only because `agents` requires it as a peer); keep the list short.
+- Runtime dependencies are accepted here (agents, react, zod, three for the 3D masthead, loaded lazily, and @modelcontextprotocol/sdk only because `agents` requires it as a peer); keep the list short.
 - Pure logic lives in `src/core` and has unit tests. IO lives in `src/worker`; each tool is split into a fetch function (IO) and a pure format function.
 - Test both the pure core and the agent loop (with a fake model and fake tools). Run `npm test` before committing.
 - Secrets come from `env` only (`.dev.vars` locally, `wrangler secret` when deployed), never in code or committed files.
@@ -11,7 +11,7 @@ Build story 1 first, then stop so I can try it. Plan before you code, commit in 
 - UI review without keys: in `npm run dev`, open `/?demo=model`, `category`, `compared`, `chat`, `running` or `error` (`src/web/demo.ts`, dev-only, never shipped).
 
 # SameSame: product brief
-**Name:** SameSame. Its mark is two identical price tags stacked into an equals sign (`public/favicon.svg`, `src/web/Logo.tsx`); the UI is a dark bench with amber marking what counts.
+**Name:** SameSame. Its mark is two identical price tags stacked into an equals sign (`public/favicon.svg`, `src/web/Logo.tsx`); the UI is a dark bench with amber marking what counts. Tagline: "Same same. Different price." A landing page at `/` leads to the search at `/search`; both open on a three.js scene of price tags in the logo's shape hanging from a lit rail (`src/web/scene`), which sort by price and shuffle while a search runs. The follow-up chat sits right under the run status.
 
 **In one line:** Helps you work out what to buy, and where, without hours of review-watching and cross-platform checking, and keeps watching the price for you.
 

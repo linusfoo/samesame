@@ -5,6 +5,8 @@ import type { ResearchInput } from "../core/request";
 import { Ask } from "./Ask";
 import { Results } from "./Results";
 import { Logo } from "./Logo";
+import { Hero3D } from "./Hero3D";
+import { Landing } from "./Landing";
 
 const ITEM_KEY = "buying-helper:item";
 
@@ -46,6 +48,20 @@ export function App() {
 
   const state = demo ?? live;
 
+  // Two pages: the landing page at /, the search at /search (demo pages always open the search).
+  const [path, setPath] = useState(location.pathname);
+  useEffect(() => {
+    const onPop = () => setPath(location.pathname);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  function go(to: string) {
+    history.pushState(null, "", to + location.search);
+    setPath(to);
+    window.scrollTo(0, 0);
+  }
+  const onSearch = Boolean(demoName) || path.startsWith("/search");
+
   const actions: Actions = {
     async start(input) {
       if (demo) return "This is a demo page; searches are off.";
@@ -67,31 +83,48 @@ export function App() {
   return (
     <div className="page">
       <header className="topbar">
-        <div className="identity">
+        <a
+          className="identity"
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            go("/");
+          }}
+        >
           <span className="mark">
             <Logo />
           </span>
           <div>
             <strong>SameSame</strong>
-            <small>Singapore · prices in SGD</small>
+            <small>Singapore, prices in SGD</small>
           </div>
-        </div>
+        </a>
         <RunStatus state={state} />
       </header>
 
-      <header className="masthead">
-        <p className="kicker">Same item, every shop</p>
-        <h1>Find it once. See it everywhere it's sold.</h1>
-        <p>Agents search Singapore shops, work out which listings are really the same item, and hang every price on one scale.</p>
-      </header>
+      {onSearch ? (
+        <>
+          <header className="masthead masthead-search">
+            <div className="masthead-copy">
+              <h1>What are you buying?</h1>
+              <p>Name the model, or just the kind of product. The tags shuffle while the agents search.</p>
+            </div>
+            <Hero3D busy={state?.status === "running"} />
+          </header>
 
-      <Ask state={state} actions={actions} />
+          <Ask state={state} actions={actions} />
 
-      <main className="results" aria-live="polite">
-        {state ? <Results state={state} actions={actions} /> : <p className="quiet">Connecting…</p>}
-      </main>
+          <main className="results" aria-live="polite">
+            {state ? <Results state={state} actions={actions} /> : <p className="quiet">Connecting…</p>}
+          </main>
 
-      {state && <Footer state={state} />}
+          {state && <Footer state={state} />}
+        </>
+      ) : (
+        <main>
+          <Landing state={state} go={go} />
+        </main>
+      )}
     </div>
   );
 }
