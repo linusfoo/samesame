@@ -10,7 +10,8 @@
     "deploy": "vite build && wrangler deploy",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "test:live": "vitest run --config vitest.live.config.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
