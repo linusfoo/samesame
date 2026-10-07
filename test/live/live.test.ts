@@ -22,9 +22,9 @@ import { tavilyExtract, tavilyMcpUrl, tavilySearch, type McpCaller, type McpTool
 import { formatSgd } from "../../src/core/price";
 
 const PRODUCTS: ResearchInput[] = [
-  { query: "Sony WH-1000XM6 headphones", description: "Black, over-ear", priorities: "Local warranty, cheapest new unit" },
-  { query: "Dyson V15 Detect Absolute", description: "Cordless stick vacuum", priorities: "Official warranty" },
-  { query: "Samsung Galaxy S25 Ultra 256GB Titanium Black", description: "Phone", priorities: "Local set only" },
+  { mode: "model", query: "Sony WH-1000XM6 headphones", description: "Black, over-ear", priorities: "Local warranty, cheapest new unit" },
+  { mode: "model", query: "Dyson V15 Detect Absolute", description: "Cordless stick vacuum", priorities: "Official warranty" },
+  { mode: "model", query: "Samsung Galaxy S25 Ultra 256GB Titanium Black", description: "Phone", priorities: "Local set only" },
 ];
 
 const FIVE_MINUTES = 5 * 60_000;

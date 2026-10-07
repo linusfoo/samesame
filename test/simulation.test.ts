@@ -15,10 +15,10 @@
 import { describe, expect, it } from "vitest";
 import type { BraveResponse } from "../src/worker/tools/brave";
 import { buildTools, type QuotaGate, type ToolIO } from "../src/worker/tools/index";
-import { MATCHER_SYSTEM, runResearch, type ResearchInput } from "../src/worker/research";
+import { CANDIDATES_SYSTEM, MATCHER_SYSTEM, candidateInput, runCandidates, runResearch, type ResearchInput } from "../src/worker/research";
 import { SUBMIT_TOOL } from "../src/worker/agents/subagent";
 import type { Model, ModelRequest, ToolCall } from "../src/worker/llm";
-import type { DiscoveryReply, LlmMatchReply } from "../src/core/schemas";
+import type { CandidatesResult as CandidatesReply, DiscoveryReply, LlmMatchReply } from "../src/core/schemas";
 import type { Tool } from "../src/core/quota";
 
 type Scenario = {
@@ -40,6 +40,7 @@ const hit = (title: string, url: string, description: string) => ({ title, url, 
 // ---------------------------------------------------------------------------
 const sony: Scenario = {
   input: {
+    mode: "model",
     query: "Sony WH-1000XM6 headphones",
     description: "Black, over-ear noise cancelling",
     priorities: "Local warranty matters; cheapest new unit",
@@ -84,6 +85,7 @@ const sony: Scenario = {
 // ---------------------------------------------------------------------------
 const dyson: Scenario = {
   input: {
+    mode: "model",
     query: "Dyson V15 Detect Absolute",
     description: "Cordless stick vacuum",
     priorities: "Want official warranty, OK with a bundle if the price is good",
@@ -143,6 +145,7 @@ const samsungResults: BraveResponse = {
 };
 const samsung: Scenario = {
   input: {
+    mode: "model",
     query: "Samsung Galaxy S25 Ultra 256GB Titanium Black",
     description: "Phone",
     priorities: "Local set only, no parallel imports",
@@ -305,5 +308,97 @@ describe("simulated search 3: Samsung S25 Ultra (hostile conditions)", async () 
     expect(amazon.currency).toBe("USD");
     expect(amazon.comparable).toBe(false);
     expect(outcome.listings.find((l) => l.source === "courts.com.sg")!.status).toBe("llm_same");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Scenario 4: category mode. "Noise cancelling headphones" → candidates →
+// the shopper picks two, researched in parallel.
+// ---------------------------------------------------------------------------
+const category: ResearchInput = {
+  mode: "category",
+  query: "Noise cancelling headphones",
+  description: "Over-ear, for flights",
+  priorities: "Local warranty, under S$600",
+};
+
+const candidates: CandidatesReply = {
+  candidates: [
+    { brand: "Sony", name: "WH-1000XM6", modelNumber: "WH-1000XM6/B", reason: "Best-rated noise cancelling, S$529–579 locally" },
+    { brand: "Bose", name: "QuietComfort Ultra Headphones", modelNumber: null, reason: "Most comfortable for long flights" },
+    { brand: "Sennheiser", name: "Momentum 4 Wireless", modelNumber: null, reason: "60-hour battery, under S$500" },
+  ],
+};
+
+const bose: Scenario = {
+  input: candidateInput(category, candidates.candidates[1]),
+  brave: {
+    "Bose QuietComfort Ultra Headphones Singapore": {
+      web: {
+        results: [
+          hit("Bose QuietComfort Ultra Headphones Black | Challenger", "https://www.challenger.sg/bose-qcu", "S$599.00"),
+          hit("Bose QC Ultra Headphones | Lazada", "https://www.lazada.sg/products/bose-qcu", "S$549.00"),
+        ],
+      },
+    },
+  },
+  pages: {},
+  plan: [{ name: "web_search", args: { query: "Bose QuietComfort Ultra Headphones Singapore" } }],
+  discovery: {
+    product: { brand: "Bose", name: "QuietComfort Ultra Headphones", modelNumber: null, variant: {} },
+    listings: [
+      { source: "challenger.sg", url: "https://www.challenger.sg/bose-qcu", title: "Bose QuietComfort Ultra Headphones Black", priceText: "S$599.00", modelNumber: null, condition: "new", warranty: "local", isBundle: false, variant: { color: "black" } },
+      { source: "lazada.sg", url: "https://www.lazada.sg/products/bose-qcu", title: "Bose QC Ultra Headphones", priceText: "S$549.00", modelNumber: null, condition: "new", warranty: "unknown", isBundle: false, variant: {} },
+    ],
+  },
+  matcher: {
+    decisions: [
+      { index: 0, verdict: "same", confidence: 0.95, reason: "same name" },
+      { index: 1, verdict: "same", confidence: 0.85, reason: "QC Ultra is the short name" },
+    ],
+  },
+};
+
+describe("simulated search 4: category mode (noise cancelling headphones)", async () => {
+  const proposer: Model = async (req) => {
+    expect(req.messages[0].content).toBe(CANDIDATES_SYSTEM);
+    return { message: { role: "assistant", content: null, tool_calls: [call(SUBMIT_TOOL, candidates)] } };
+  };
+  const proposed = await runCandidates(category, { model: proposer, tools: scenarioIO(sony).tools });
+
+  const picks = [0, 1];
+  const scenarios = [{ ...sony, input: candidateInput(category, proposed.candidates[0]) }, bose];
+  const events: string[] = [];
+  const outcomes = await Promise.all(
+    picks.map((i) => {
+      const s = scenarios[i];
+      return runResearch(s.input, {
+        model: scriptedModel(s).model,
+        tools: scenarioIO(s).tools,
+        item: `c${i}`,
+        onEvent: (e) => events.push(e.item ?? "?"),
+      });
+    }),
+  );
+
+  it("proposes 3 to 5 candidate models with reasons", () => {
+    expect(proposed.ok).toBe(true);
+    expect(proposed.candidates).toHaveLength(3);
+    expect(proposed.candidates.every((c) => c.reason.length > 0)).toBe(true);
+  });
+  it("turns a pick into a model search that keeps the shopper's description and priorities", () => {
+    expect(candidateInput(category, candidates.candidates[0])).toEqual({
+      mode: "model",
+      query: "Sony WH-1000XM6 WH-1000XM6/B",
+      description: "Over-ear, for flights",
+      priorities: "Local warranty, under S$600",
+    });
+    expect(candidateInput(category, candidates.candidates[1]).query).toBe("Bose QuietComfort Ultra Headphones");
+  });
+  it("researches both picks in parallel, each event tagged with its product", () => {
+    expect(outcomes.every((o) => o.ok)).toBe(true);
+    expect(outcomes[0].matchedSources).toBeGreaterThanOrEqual(3);
+    expect(sourcesOf(outcomes[1].groups.matched)).toEqual(["challenger.sg", "lazada.sg"]);
+    expect(new Set(events)).toEqual(new Set(["c0", "c1"]));
   });
 });

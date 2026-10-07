@@ -51,6 +51,14 @@ export function canUse(state: QuotaState, tool: Tool, purpose: Purpose = "search
   return state.used[tool] < limitFor(tool, purpose, limits);
 }
 
+/** Tool calls one sub-agent run may make (kept equal to the agent loop's cap). */
+export const DEFAULT_CALLS_PER_RUN = 6;
+
+/** Full agent runs today's search calls (Brave or Tavily) can still pay for. */
+export function affordableRuns(left: Usage, callsPerRun: number = DEFAULT_CALLS_PER_RUN): number {
+  return Math.floor((left.brave + left.tavily) / callsPerRun);
+}
+
 export function consume(state: QuotaState, tool: Tool): QuotaState {
   return { ...state, used: { ...state.used, [tool]: state.used[tool] + 1 } };
 }

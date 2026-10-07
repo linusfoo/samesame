@@ -51,6 +51,17 @@ export const DiscoveryResultSchema = z.object({
   listings: z.array(ReportedListingSchema).max(12),
 });
 
+export const CandidateSchema = z.object({
+  brand: z.string().min(1),
+  name: z.string().min(1),
+  modelNumber: z.string().nullable().describe("Manufacturer model number if the results show one, else null"),
+  reason: z.string().max(200).describe("One line: why it fits the shopper's description and priorities"),
+});
+
+export const CandidatesResultSchema = z.object({
+  candidates: z.array(CandidateSchema).min(3).max(5),
+});
+
 export const LlmMatchResultSchema = z.object({
   decisions: z.array(
     z.object({
@@ -67,6 +78,8 @@ export const LlmMatchResultSchema = z.object({
 });
 
 export type ReportedListing = z.infer<typeof ReportedListingSchema>;
+export type Candidate = z.infer<typeof CandidateSchema>;
+export type CandidatesResult = z.infer<typeof CandidatesResultSchema>;
 export type DiscoveryResult = z.infer<typeof DiscoveryResultSchema>;
 /** What the model sends; shipping and vouchers may be left out. */
 export type DiscoveryReply = z.input<typeof DiscoveryResultSchema>;

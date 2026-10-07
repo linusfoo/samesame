@@ -37,6 +37,7 @@ export function App() {
     const res = await agent.stub.startResearch({
       query: String(form.get("query") ?? ""),
       description: String(form.get("description") ?? ""),
+      mode: "model",
       priorities: String(form.get("priorities") ?? ""),
     });
     if (!res.started) setNotice(`Couldn't start: ${res.reason}.`);
@@ -122,7 +123,8 @@ function Results({ state }: { state: ItemState }) {
     );
   }
 
-  const g = state.groups;
+  const first = state.products[0];
+  const g = first?.groups ?? null;
   return (
     <>
       <div className={`status status-${state.status}`}>
@@ -135,14 +137,14 @@ function Results({ state }: { state: ItemState }) {
         {state.error && <p>{state.error}</p>}
       </div>
 
-      {state.product && (
+      {first?.product && (
         <div className="product">
           <h2>
-            {state.product.brand} {state.product.name}
+            {first?.product.brand} {first?.product.name}
           </h2>
           <p>
-            {state.product.modelNumber ? `Model ${state.product.modelNumber}` : "No model number found; the LLM matched listings by name."}
-            {state.status === "done" && ` Found in ${state.matchedSources} shop${state.matchedSources === 1 ? "" : "s"}.`}
+            {first?.product.modelNumber ? `Model ${first?.product.modelNumber}` : "No model number found; the LLM matched listings by name."}
+            {state.status === "done" && ` Found in ${first.matchedSources} shop${first.matchedSources === 1 ? "" : "s"}.`}
           </p>
         </div>
       )}

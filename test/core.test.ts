@@ -4,6 +4,7 @@ import { parsePrice } from "../src/core/price";
 import { detectVariant, pinnedFromRequest } from "../src/core/listing";
 import { applyLlmDecision, groupListings, matchListing, variantCounts } from "../src/core/match";
 import { canUse, consume, currentQuota, emptyQuota, remaining, sgDay } from "../src/core/quota";
+import { checkPicks, parseResearchInput } from "../src/core/request";
 
 describe("parseModelCode", () => {
   it("splits colour suffixes after a slash", () => {
@@ -231,5 +232,44 @@ describe("quota", () => {
   });
   it("gives new searches 70% of the real daily limits by default", () => {
     expect(remaining(emptyQuota(morning))).toEqual({ brave: 42, tavily: 21, browser: 14 });
+  });
+});
+
+describe("search requests", () => {
+  it("accepts a model or a category search and trims the text", () => {
+    expect(parseResearchInput({ mode: "category", query: "  27-inch 4K monitor ", description: "", priorities: "" })).toEqual({
+      ok: true,
+      value: { mode: "category", query: "27-inch 4K monitor", description: "", priorities: "" },
+    });
+    expect(parseResearchInput({ query: "Sony WH-1000XM6" })).toMatchObject({ ok: true, value: { mode: "model" } });
+  });
+  it("rejects an unknown mode or an empty query", () => {
+    expect(parseResearchInput({ mode: "flights", query: "SIN-NRT" })).toEqual({ ok: false, reason: "choose a model or a category search" });
+    expect(parseResearchInput({ mode: "category", query: "  " })).toEqual({ ok: false, reason: "enter a category" });
+    expect(parseResearchInput(null)).toEqual({ ok: false, reason: "enter a product" });
+  });
+});
+
+describe("candidate picks", () => {
+  const plenty = { brave: 42, tavily: 21, browser: 14 };
+  it("allows one or two picks from the list", () => {
+    expect(checkPicks([0, 2], 3, plenty)).toEqual({ ok: true, value: [0, 2] });
+    expect(checkPicks([1, 1], 3, plenty)).toEqual({ ok: true, value: [1] });
+  });
+  it("refuses more than two, none, or a pick outside the list", () => {
+    expect(checkPicks([0, 1, 2], 3, plenty)).toEqual({ ok: false, reason: "pick at most 2 products" });
+    expect(checkPicks([], 3, plenty)).toEqual({ ok: false, reason: "pick at least one product" });
+    expect(checkPicks([5], 3, plenty)).toEqual({ ok: false, reason: "that product is no longer in the list" });
+    expect(checkPicks("0", 3, plenty)).toEqual({ ok: false, reason: "pick at least one product" });
+  });
+  it("refuses when today's search share can't pay for every pick", () => {
+    expect(checkPicks([0, 1], 3, { brave: 4, tavily: 3, browser: 14 })).toEqual({
+      ok: false,
+      reason: "today's search budget covers 1 more product; pick 1",
+    });
+    expect(checkPicks([0], 3, { brave: 2, tavily: 0, browser: 14 })).toEqual({
+      ok: false,
+      reason: "today's search budget is used up; try again tomorrow",
+    });
   });
 });

@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import { DEFAULT_CALLS_PER_RUN } from "../../core/quota";
 import { describeIssues } from "../../core/schemas";
 import type { ChatMessage, Model, ToolCall, ToolDefinition } from "../llm";
 import { toDefinition, truncate, type AgentTool } from "../tools/registry";
@@ -40,7 +41,7 @@ export type AgentRunResult<T> =
   | { ok: true; result: T; trace: TraceEvent[]; toolCalls: number }
   | { ok: false; error: string; trace: TraceEvent[]; toolCalls: number };
 
-export const DEFAULT_MAX_TOOL_CALLS = 6;
+export const DEFAULT_MAX_TOOL_CALLS = DEFAULT_CALLS_PER_RUN;
 export const DEFAULT_TIMEOUT_MS = 90_000;
 const MAX_INVALID_SUBMITS = 2;
 const MAX_NUDGES = 2;
