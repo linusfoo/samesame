@@ -11,7 +11,13 @@ export type Warranty = "local" | "export" | "parallel_import" | "unknown";
 export type Variant = {
   color?: string;
   storage?: string;
+  /** Screen or panel size in inches, e.g. "27in". */
+  size?: string;
 };
+
+export type VariantField = "color" | "storage" | "size";
+
+export type VariantDiff = { field: VariantField; text: string };
 
 export function detectCondition(text: string): Condition {
   const t = text.toLowerCase();
@@ -87,17 +93,30 @@ export function detectVariant(text: string): Variant {
       variant.storage = largest >= 1024 ? `${largest / 1024}TB` : `${largest}GB`;
     }
   }
+
+  // 27", 27-inch, 65 inch, 27in (but not "27 in stock")
+  const inches = t.match(/\b(\d{2,3}(?:\.\d)?)(?:\s?(?:"|”|-?\s?inch(?:es)?\b)|in\b)/);
+  if (inches) variant.size = `${inches[1]}in`;
   return variant;
 }
 
-/** Names of the variant fields that are known on both sides and differ. */
-export function variantDifferences(target: Variant, listing: Variant): string[] {
-  const diffs: string[] = [];
-  if (target.color && listing.color && target.color !== listing.color) {
-    diffs.push(`colour ${listing.color} vs ${target.color}`);
-  }
-  if (target.storage && listing.storage && target.storage !== listing.storage) {
-    diffs.push(`storage ${listing.storage} vs ${target.storage}`);
+/** Variant fields that are known on both sides and differ. */
+export function variantDifferences(target: Variant, listing: Variant): VariantDiff[] {
+  const diffs: VariantDiff[] = [];
+  for (const field of ["color", "storage", "size"] as const) {
+    const want = target[field];
+    const got = listing[field];
+    if (want && got && want !== got) {
+      diffs.push({ field, text: `${field === "color" ? "colour" : field} ${got} vs ${want}` });
+    }
   }
   return diffs;
+}
+
+/** Which variant fields the shopper's own words pin down ("512GB", "27-inch"). */
+export type Pinned = { storage: boolean; size: boolean };
+
+export function pinnedFromRequest(query: string, description: string): Pinned {
+  const v = detectVariant(`${query} ${description}`);
+  return { storage: Boolean(v.storage), size: Boolean(v.size) };
 }

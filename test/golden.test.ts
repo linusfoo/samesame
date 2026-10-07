@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { matchListing, type ListingInput, type Target } from "../src/core/match";
+import { pinnedFromRequest } from "../src/core/listing";
 
 type GoldenListing = ListingInput & {
   expect: {
@@ -12,6 +13,8 @@ type GoldenListing = ListingInput & {
     condition: string;
     warranty: string;
     isBundle: boolean;
+    /** Counts toward the verdict (needs_llm listings: before the LLM decides). */
+    comparable: boolean;
   };
 };
 
@@ -29,10 +32,11 @@ describe("golden set", () => {
     const golden: GoldenFile = JSON.parse(readFileSync(join(dir, file), "utf8"));
 
     describe(golden.query, () => {
+      const target: Target = { ...golden.target, pinned: pinnedFromRequest(golden.query, "") };
       for (const listing of golden.listings) {
         it(listing.title, () => {
           const { expect: want, ...input } = listing;
-          const got = matchListing(golden.target, input);
+          const got = matchListing(target, input);
           expect({
             match: got.status,
             price: got.price,
@@ -40,6 +44,7 @@ describe("golden set", () => {
             condition: got.condition,
             warranty: got.warranty,
             isBundle: got.isBundle,
+            comparable: got.comparable,
           }).toEqual({
             match: want.match,
             price: want.price,
@@ -47,6 +52,7 @@ describe("golden set", () => {
             condition: want.condition,
             warranty: want.warranty,
             isBundle: want.isBundle,
+            comparable: want.comparable,
           });
         });
       }

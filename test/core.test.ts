@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { extractModelCodes, parseModelCode, sameFamily } from "../src/core/sku";
 import { parsePrice } from "../src/core/price";
-import { detectVariant } from "../src/core/listing";
-import { applyLlmDecision, groupListings, matchListing } from "../src/core/match";
+import { detectVariant, pinnedFromRequest } from "../src/core/listing";
+import { applyLlmDecision, groupListings, matchListing, variantCounts } from "../src/core/match";
 import { canUse, consume, currentQuota, emptyQuota, remaining, sgDay } from "../src/core/quota";
 
 describe("parseModelCode", () => {
@@ -71,6 +71,64 @@ describe("detectVariant", () => {
   });
 });
 
+describe("size and pinning", () => {
+  it("reads screen size in inches but not stock counts", () => {
+    expect(detectVariant('LG 27" OLED').size).toBe("27in");
+    expect(detectVariant("Samsung 65-inch TV").size).toBe("65in");
+    expect(detectVariant("Monitor 32 inch 4K").size).toBe("32in");
+    expect(detectVariant("Dell 27in monitor").size).toBe("27in");
+    expect(detectVariant("Only 27 in stock").size).toBeUndefined();
+  });
+  it("pins storage or size named in the product or the description", () => {
+    expect(pinnedFromRequest("Galaxy S25 Ultra 512GB", "")).toEqual({ storage: true, size: false });
+    expect(pinnedFromRequest("Galaxy S25 Ultra", "want the 256GB one")).toEqual({ storage: true, size: false });
+    expect(pinnedFromRequest("4K monitor", "27-inch, IPS")).toEqual({ storage: false, size: true });
+    expect(pinnedFromRequest("Sony WH-1000XM6", "black")).toEqual({ storage: false, size: false });
+  });
+});
+
+describe("comparable variants", () => {
+  const phone = (pinned: { storage: boolean; size: boolean }) => ({
+    modelNumber: "SM-S938B",
+    variant: { color: "titanium black", storage: "256GB" },
+    pinned,
+  });
+  const mk = (target: Parameters<typeof matchListing>[0], title: string) =>
+    matchListing(target, { source: "s", url: "https://s.sg", title, priceText: "S$1,500" });
+
+  it("counts a colour-only variant", () => {
+    const got = mk(phone({ storage: true, size: false }), "Galaxy S25 Ultra 256GB Titanium Gray SM-S938B");
+    expect(got.status).toBe("variant");
+    expect(got.differs).toEqual(["color"]);
+    expect(got.comparable).toBe(true);
+  });
+  it("does not count another storage size when the shopper named one", () => {
+    const got = mk(phone({ storage: true, size: false }), "Galaxy S25 Ultra 512GB Titanium Black SM-S938B");
+    expect(got.status).toBe("variant");
+    expect(got.comparable).toBe(false);
+  });
+  it("counts another storage size when the shopper left it open", () => {
+    const got = mk(phone({ storage: false, size: false }), "Galaxy S25 Ultra 512GB Titanium Black SM-S938B");
+    expect(got.comparable).toBe(true);
+  });
+  it("treats a model suffix difference as colour", () => {
+    const got = mk({ modelNumber: "WH-1000XM6/B", variant: {} }, "Sony WH-1000XM6/S headphones");
+    expect(got.status).toBe("variant");
+    expect(got.differs).toEqual(["color"]);
+    expect(got.comparable).toBe(true);
+  });
+  it("still excludes bundles and refurbished units", () => {
+    const target = { modelNumber: "WH-1000XM6/B", variant: {} };
+    expect(mk(target, "Sony WH-1000XM6/B + Free Case").comparable).toBe(false);
+    expect(mk(target, "Refurbished Sony WH-1000XM6/B").comparable).toBe(false);
+  });
+  it("variantCounts allows only colour and unpinned fields", () => {
+    expect(variantCounts(["color"], { storage: true, size: true })).toBe(true);
+    expect(variantCounts(["size"], { storage: false, size: true })).toBe(false);
+    expect(variantCounts(["other"], { storage: false, size: false })).toBe(false);
+  });
+});
+
 describe("LLM fallback", () => {
   const target = { modelNumber: null, variant: {} };
   const listing = matchListing(target, {
@@ -89,6 +147,14 @@ describe("LLM fallback", () => {
     const got = applyLlmDecision(listing, { verdict: "same", confidence: 0.4, reason: "maybe" });
     expect(got.status).toBe("unconfirmed");
     expect(got.comparable).toBe(false);
+  });
+  it("counts an LLM variant only when it says what differs and that is allowed", () => {
+    const colour = applyLlmDecision(listing, { verdict: "variant", confidence: 0.9, reason: "blue", differs: ["color"] });
+    expect(colour.status).toBe("llm_variant");
+    expect(colour.comparable).toBe(true);
+    const unknown = applyLlmDecision(listing, { verdict: "variant", confidence: 0.9, reason: "?" });
+    expect(unknown.differs).toEqual(["other"]);
+    expect(unknown.comparable).toBe(false);
   });
   it("never overrides a model-number decision", () => {
     const sku = matchListing({ modelNumber: "ILCE-7M4", variant: {} }, {

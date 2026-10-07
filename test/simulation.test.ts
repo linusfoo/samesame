@@ -18,7 +18,7 @@ import { buildTools, type QuotaGate, type ToolIO } from "../src/worker/tools/ind
 import { MATCHER_SYSTEM, runResearch, type ResearchInput } from "../src/worker/research";
 import { SUBMIT_TOOL } from "../src/worker/agents/subagent";
 import type { Model, ModelRequest, ToolCall } from "../src/worker/llm";
-import type { DiscoveryResult, LlmMatchResult } from "../src/core/schemas";
+import type { DiscoveryResult, LlmMatchReply } from "../src/core/schemas";
 import type { Tool } from "../src/core/quota";
 
 type Scenario = {
@@ -29,7 +29,7 @@ type Scenario = {
   /** Tool calls the scripted model makes before submitting. */
   plan: { name: string; args: Record<string, unknown> }[];
   discovery: DiscoveryResult;
-  matcher?: LlmMatchResult;
+  matcher?: LlmMatchReply;
 };
 
 const pad = (s: string) => `${s}\n${"Product details, specifications and delivery information. ".repeat(6)}`;

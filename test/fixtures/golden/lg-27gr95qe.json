@@ -3,14 +3,14 @@
   "target": { "modelNumber": "27GR95QE-B", "variant": {} },
   "listings": [
     { "source": "challenger.sg", "url": "https://www.challenger.sg/golden-lg-1", "title": "LG UltraGear 27GR95QE-B 27\" OLED Gaming Monitor 240Hz", "priceText": "S$1,099.00",
-      "expect": { "match": "same", "truth": "same", "price": 1099, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+      "expect": { "match": "same", "truth": "same", "price": 1099, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false, "comparable": true } },
     { "source": "shopee.sg", "url": "https://shopee.sg/golden-lg-2", "title": "LG 27GR95QE 27 inch OLED 240Hz Monitor (3 Years LG Singapore Warranty)", "priceText": "S$999.00",
-      "expect": { "match": "same", "truth": "same", "price": 999, "currency": "SGD", "condition": "new", "warranty": "local", "isBundle": false } },
+      "expect": { "match": "same", "truth": "same", "price": 999, "currency": "SGD", "condition": "new", "warranty": "local", "isBundle": false, "comparable": true } },
     { "source": "amazon.sg", "url": "https://www.amazon.sg/golden-lg-3", "title": "LG 27GS95QE-B 27 Inch UltraGear OLED Gaming Monitor", "priceText": "S$1,149.00",
-      "expect": { "match": "different", "truth": "different", "price": 1149, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+      "expect": { "match": "different", "truth": "different", "price": 1149, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false, "comparable": false } },
     { "source": "lazada.sg", "url": "https://www.lazada.sg/golden-lg-4", "title": "LG UltraGear 27GR93U-B 27\" 4K IPS Gaming Monitor", "priceText": "S$549.00",
-      "expect": { "match": "different", "truth": "different", "price": 549, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+      "expect": { "match": "different", "truth": "different", "price": 549, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false, "comparable": false } },
     { "source": "harveynorman.com.sg", "url": "https://www.harveynorman.com.sg/golden-lg-5", "title": "LG 27\" UltraGear OLED Gaming Monitor", "priceText": "S$1,199.00",
-      "expect": { "match": "needs_llm", "truth": "uncertain", "price": 1199, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } }
+      "expect": { "match": "needs_llm", "truth": "uncertain", "price": 1199, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false, "comparable": false } }
   ]
 }

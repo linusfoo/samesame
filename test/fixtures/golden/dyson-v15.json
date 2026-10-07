@@ -3,14 +3,14 @@
   "target": { "modelNumber": null, "variant": {} },
   "listings": [
     { "source": "shopee.sg", "url": "https://shopee.sg/golden-dy-1", "title": "Dyson V15 Detect Absolute Cordless Vacuum (Nickel/Yellow) - 2 Year Local Warranty", "priceText": "S$1,099.00",
-      "expect": { "match": "needs_llm", "truth": "same", "price": 1099, "currency": "SGD", "condition": "new", "warranty": "local", "isBundle": false } },
+      "expect": { "match": "needs_llm", "truth": "same", "price": 1099, "currency": "SGD", "condition": "new", "warranty": "local", "isBundle": false, "comparable": false } },
     { "source": "lazada.sg", "url": "https://www.lazada.sg/golden-dy-2", "title": "Dyson V15 Detect Absolute Vacuum Cleaner Refurbished", "priceText": "S$749.00",
-      "expect": { "match": "needs_llm", "truth": "same", "price": 749, "currency": "SGD", "condition": "refurbished", "warranty": "unknown", "isBundle": false } },
+      "expect": { "match": "needs_llm", "truth": "same", "price": 749, "currency": "SGD", "condition": "refurbished", "warranty": "unknown", "isBundle": false, "comparable": false } },
     { "source": "amazon.sg", "url": "https://www.amazon.sg/golden-dy-3", "title": "Dyson V15 Detect Absolute, Yellow/Nickel", "priceText": "S$1,049.00",
-      "expect": { "match": "needs_llm", "truth": "same", "price": 1049, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+      "expect": { "match": "needs_llm", "truth": "same", "price": 1049, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false, "comparable": false } },
     { "source": "courts.com.sg", "url": "https://www.courts.com.sg/golden-dy-4", "title": "Dyson V12 Detect Slim Absolute Cordless Vacuum", "priceText": "S$899.00",
-      "expect": { "match": "needs_llm", "truth": "different", "price": 899, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+      "expect": { "match": "needs_llm", "truth": "different", "price": 899, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false, "comparable": false } },
     { "source": "bestdenki.com.sg", "url": "https://www.bestdenki.com.sg/golden-dy-5", "title": "Dyson V15 Detect Absolute + Free Floor Dok Bundle", "priceText": "S$1,149.00",
-      "expect": { "match": "needs_llm", "truth": "same", "price": 1149, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": true } }
+      "expect": { "match": "needs_llm", "truth": "same", "price": 1149, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": true, "comparable": false } }
   ]
 }

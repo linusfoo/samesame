@@ -8,6 +8,7 @@ import { z } from "zod";
 export const VariantSchema = z.object({
   color: z.string().optional(),
   storage: z.string().optional(),
+  size: z.string().optional().describe('Screen size in inches, e.g. "27in"'),
 });
 
 export const ReportedListingSchema = z.object({
@@ -47,6 +48,10 @@ export const LlmMatchResultSchema = z.object({
       verdict: z.enum(["same", "variant", "different", "unsure"]),
       confidence: z.number().min(0).max(1),
       reason: z.string(),
+      differs: z
+        .array(z.enum(["color", "storage", "size", "other"]))
+        .default([])
+        .describe('For "variant": which of colour, storage, size (or other) differ. Empty otherwise.'),
     }),
   ),
 });
@@ -54,6 +59,8 @@ export const LlmMatchResultSchema = z.object({
 export type ReportedListing = z.infer<typeof ReportedListingSchema>;
 export type DiscoveryResult = z.infer<typeof DiscoveryResultSchema>;
 export type LlmMatchResult = z.infer<typeof LlmMatchResultSchema>;
+/** What the model sends; `differs` may be left out. */
+export type LlmMatchReply = z.input<typeof LlmMatchResultSchema>;
 
 /** One-line summary of a zod error for the retry message. */
 export function describeIssues(error: z.ZodError): string {

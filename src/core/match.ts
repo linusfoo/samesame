@@ -14,7 +14,9 @@ import {
   detectWarranty,
   variantDifferences,
   type Condition,
+  type Pinned,
   type Variant,
+  type VariantField,
   type Warranty,
 } from "./listing";
 import { parsePrice, type Currency } from "./price";
@@ -22,7 +24,14 @@ import { parsePrice, type Currency } from "./price";
 export type Target = {
   modelNumber: string | null;
   variant: Variant;
+  /** Variant fields the shopper asked for by name; other values of these don't count. */
+  pinned?: Pinned;
 };
+
+/** How a variant listing differs from the target. "other" never counts. */
+export type Difference = VariantField | "other";
+
+const NOT_PINNED: Pinned = { storage: false, size: false };
 
 export type ListingInput = {
   source: string;
@@ -56,7 +65,14 @@ export type MatchedListing = ListingInput & {
   warranty: Warranty;
   isBundle: boolean;
   variant: Variant;
-  /** True when it can be compared like-for-like with the target. */
+  /** For variants: what differs from the target. */
+  differs: Difference[];
+  pinned: Pinned;
+  /**
+   * True when it counts toward the verdict: new, not a bundle, priced in SGD,
+   * and the same item or a variant differing only in colour or an unpinned
+   * storage/size.
+   */
   comparable: boolean;
 };
 
@@ -82,6 +98,7 @@ export function matchListing(target: Target, listing: ListingInput): MatchedList
     isBundle: listing.isBundle ?? detectBundle(listing.title),
     variant,
     confidence: null,
+    pinned: target.pinned ?? NOT_PINNED,
   };
 
   const decision = decideByModelNumber(target, text, variant);
@@ -92,36 +109,43 @@ function decideByModelNumber(
   target: Target,
   text: string,
   variant: Variant,
-): { status: MatchStatus; reason: string } {
+): { status: MatchStatus; reason: string; differs: Difference[] } {
   const targetCode = target.modelNumber ? parseModelCode(target.modelNumber) : null;
   if (!targetCode) {
-    return { status: "needs_llm", reason: "no target model number to compare" };
+    return { status: "needs_llm", reason: "no target model number to compare", differs: [] };
   }
 
   const codes = extractModelCodes(text);
   const hit = codes.find((c) => sameFamily(c.family, targetCode.family));
   if (hit) {
     const diffs = variantDifferences(normaliseVariant(target.variant), variant);
-    if (hit.suffix && targetCode.suffix && hit.suffix !== targetCode.suffix) {
-      diffs.push(`model suffix /${hit.suffix} vs /${targetCode.suffix}`);
+    // Suffixes are colour or region codes (the family key strips them), so they count as colour.
+    if (hit.suffix && targetCode.suffix && hit.suffix !== targetCode.suffix && !diffs.some((d) => d.field === "color")) {
+      diffs.push({ field: "color", text: `model suffix /${hit.suffix} vs /${targetCode.suffix}` });
     }
     if (diffs.length > 0) {
-      return { status: "variant", reason: `${hit.raw}: ${diffs.join(", ")}` };
+      return {
+        status: "variant",
+        reason: `${hit.raw}: ${diffs.map((d) => d.text).join(", ")}`,
+        differs: diffs.map((d) => d.field),
+      };
     }
-    return { status: "same", reason: `model number ${hit.raw} matches` };
+    return { status: "same", reason: `model number ${hit.raw} matches`, differs: [] };
   }
 
   const sibling = codes.find((c) => looksRelated(c.family, targetCode.family));
   if (sibling) {
-    return { status: "different", reason: `different model ${sibling.raw}` };
+    return { status: "different", reason: `different model ${sibling.raw}`, differs: [] };
   }
-  return { status: "needs_llm", reason: "no model number in listing" };
+  return { status: "needs_llm", reason: "no model number in listing", differs: [] };
 }
 
 export type LlmDecision = {
   verdict: "same" | "variant" | "different" | "unsure";
   confidence: number;
   reason: string;
+  /** For "variant": what differs. Missing means unknown, which never counts. */
+  differs?: Difference[];
 };
 
 /** Confidence below this is shown as unconfirmed rather than LLM-matched. */
@@ -140,15 +164,26 @@ export function applyLlmDecision(listing: MatchedListing, decision: LlmDecision)
     status,
     confidence: decision.confidence,
     reason: `LLM: ${decision.reason}`,
+    differs: status === "llm_variant" ? (decision.differs?.length ? decision.differs : ["other"]) : [],
   });
+}
+
+/** A variant counts when every difference is colour or a storage/size the shopper left open. */
+export function variantCounts(differs: Difference[], pinned: Pinned): boolean {
+  return differs.every(
+    (d) => d === "color" || (d === "storage" && !pinned.storage) || (d === "size" && !pinned.size),
+  );
 }
 
 function finish(listing: Omit<MatchedListing, "comparable">): MatchedListing {
   const sameProduct = listing.status === "same" || listing.status === "llm_same";
+  const countedVariant =
+    (listing.status === "variant" || listing.status === "llm_variant") &&
+    variantCounts(listing.differs, listing.pinned);
   return {
     ...listing,
     comparable:
-      sameProduct &&
+      (sameProduct || countedVariant) &&
       !listing.isBundle &&
       listing.condition === "new" &&
       listing.currency === "SGD" &&
@@ -160,6 +195,7 @@ function normaliseVariant(v: Variant): Variant {
   return {
     ...(v.color ? { color: v.color.toLowerCase().replace("grey", "gray") } : {}),
     ...(v.storage ? { storage: v.storage.toUpperCase().replace(/\s/g, "") } : {}),
+    ...(v.size ? { size: v.size.toLowerCase().replace(/\s|-?inch(es)?|"/g, "").replace(/(in)?$/, "in") } : {}),
   };
 }
 
