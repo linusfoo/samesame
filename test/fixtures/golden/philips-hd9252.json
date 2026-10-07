@@ -1,0 +1,18 @@
+{
+  "query": "Philips Essential Airfryer HD9252/91",
+  "target": { "modelNumber": "HD9252/91", "variant": {} },
+  "listings": [
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-af-1", "title": "Philips Essential Airfryer HD9252/91 4.1L - 2 Years Philips Singapore Warranty", "priceText": "S$139.00",
+      "expect": { "match": "same", "truth": "same", "price": 139, "currency": "SGD", "condition": "new", "warranty": "local", "isBundle": false } },
+    { "source": "lazada.sg", "url": "https://www.lazada.sg/golden-af-2", "title": "PHILIPS HD9252 Air Fryer Black", "priceText": "$129",
+      "expect": { "match": "same", "truth": "same", "price": 129, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "bestdenki.com.sg", "url": "https://www.bestdenki.com.sg/golden-af-3", "title": "Philips HD9252/70 Essential Airfryer", "priceText": "SGD 149.00",
+      "expect": { "match": "variant", "truth": "variant", "price": 149, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "amazon.sg", "url": "https://www.amazon.sg/golden-af-4", "title": "Philips Airfryer XXL HD9650/91", "priceText": "S$399.00",
+      "expect": { "match": "different", "truth": "different", "price": 399, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "lazada.sg", "url": "https://www.lazada.sg/golden-af-5", "title": "Philips Air Fryer 4.1L Digital Essential Black", "priceText": "S$119.00",
+      "expect": { "match": "needs_llm", "truth": "uncertain", "price": 119, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-af-6", "title": "Philips HD9252/91 Airfryer (Display Set)", "priceText": "S$99.00",
+      "expect": { "match": "same", "truth": "same", "price": 99, "currency": "SGD", "condition": "display", "warranty": "unknown", "isBundle": false } }
+  ]
+}

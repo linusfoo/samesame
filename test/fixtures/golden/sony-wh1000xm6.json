@@ -1,0 +1,20 @@
+{
+  "query": "Sony WH-1000XM6 headphones, black",
+  "target": { "modelNumber": "WH-1000XM6/B", "variant": { "color": "black" } },
+  "listings": [
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-xm6-1", "title": "Sony WH-1000XM6 Wireless Noise Cancelling Headphones Black (WH-1000XM6/B) | 1 Year Sony Singapore Warranty", "priceText": "S$579.00",
+      "expect": { "match": "same", "truth": "same", "price": 579, "currency": "SGD", "condition": "new", "warranty": "local", "isBundle": false } },
+    { "source": "lazada.sg", "url": "https://www.lazada.sg/golden-xm6-2", "title": "SONY WH1000XM6 Noise Cancelling Headphone - Silver", "priceText": "S$549.00",
+      "expect": { "match": "variant", "truth": "variant", "price": 549, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "amazon.sg", "url": "https://www.amazon.sg/golden-xm6-3", "title": "Sony WH-1000XM6/B Premium Wireless Headphones, Black", "priceText": "S$629.00 S$529.00",
+      "expect": { "match": "same", "truth": "same", "price": 529, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "qoo10.sg", "url": "https://www.qoo10.sg/golden-xm6-4", "title": "[Export Set] Sony WH-1000XM6 Headphones Black", "priceText": "S$459.00",
+      "expect": { "match": "same", "truth": "same", "price": 459, "currency": "SGD", "condition": "new", "warranty": "export", "isBundle": false } },
+    { "source": "challenger.sg", "url": "https://www.challenger.sg/golden-xm6-5", "title": "Sony WH-1000XM5 Wireless Noise Cancelling Headphones Black", "priceText": "S$399.00",
+      "expect": { "match": "different", "truth": "different", "price": 399, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-xm6-6", "title": "Sony Noise Cancelling Headphones XM6 Black + Hard Case Bundle", "priceText": "S$599.00",
+      "expect": { "match": "needs_llm", "truth": "same", "price": 599, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": true } },
+    { "source": "lazada.sg", "url": "https://www.lazada.sg/golden-xm6-7", "title": "Refurbished Sony WH-1000XM6 Headphones Black", "priceText": "S$419.00 + S$4.99 shipping",
+      "expect": { "match": "same", "truth": "same", "price": 419, "currency": "SGD", "condition": "refurbished", "warranty": "unknown", "isBundle": false } }
+  ]
+}

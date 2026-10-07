@@ -1,0 +1,18 @@
+{
+  "query": "Sony A7 IV camera body",
+  "target": { "modelNumber": "ILCE-7M4", "variant": {} },
+  "listings": [
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-a7-1", "title": "Sony Alpha A7 IV ILCE-7M4 Full Frame Mirrorless Camera Body Only (Sony Singapore Warranty)", "priceText": "S$3,199.00 + S$8.00 shipping",
+      "expect": { "match": "same", "truth": "same", "price": 3199, "currency": "SGD", "condition": "new", "warranty": "local", "isBundle": false } },
+    { "source": "lazada.sg", "url": "https://www.lazada.sg/golden-a7-2", "title": "Sony ILCE-7M4K A7 IV with FE 28-70mm Lens Kit", "priceText": "S$3,499.00",
+      "expect": { "match": "same", "truth": "same", "price": 3499, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": true } },
+    { "source": "amazon.sg", "url": "https://www.amazon.sg/golden-a7-3", "title": "Sony a7 IV Mirrorless Camera Body ILCE7M4/B", "priceText": "S$3,059.00",
+      "expect": { "match": "same", "truth": "same", "price": 3059, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "qoo10.sg", "url": "https://www.qoo10.sg/golden-a7-4", "title": "Sony ILCE-7M3 A7 III Body", "priceText": "S$1,899.00",
+      "expect": { "match": "different", "truth": "different", "price": 1899, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-a7-5", "title": "Sony A7 IV Body Parallel Import", "priceText": "S$2,699.00",
+      "expect": { "match": "needs_llm", "truth": "same", "price": 2699, "currency": "SGD", "condition": "new", "warranty": "parallel_import", "isBundle": false } },
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-a7-6", "title": "Sony ILCE-7CM2 A7C II Full Frame Body", "priceText": "S$2,799.00",
+      "expect": { "match": "different", "truth": "different", "price": 2799, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } }
+  ]
+}

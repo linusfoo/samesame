@@ -1,0 +1,18 @@
+{
+  "query": "Samsung Galaxy S25 Ultra 256GB Titanium Black",
+  "target": { "modelNumber": "SM-S938B", "variant": { "color": "titanium black", "storage": "256GB" } },
+  "listings": [
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-s25u-1", "title": "Samsung Galaxy S25 Ultra 5G 12GB+256GB Titanium Black SM-S938BZKCXSP Local Set", "priceText": "S$1,688.00",
+      "expect": { "match": "same", "truth": "same", "price": 1688, "currency": "SGD", "condition": "new", "warranty": "local", "isBundle": false } },
+    { "source": "lazada.sg", "url": "https://www.lazada.sg/golden-s25u-2", "title": "Samsung Galaxy S25 Ultra 512GB Titanium Silverblue (SM-S938B)", "priceText": "S$1,868.00",
+      "expect": { "match": "variant", "truth": "variant", "price": 1868, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "amazon.sg", "url": "https://www.amazon.sg/golden-s25u-3", "title": "Samsung Galaxy S25 Ultra 256GB Titanium Black - International Version SM-S938B/DS", "priceText": "US$1,099.99",
+      "expect": { "match": "same", "truth": "same", "price": 1099.99, "currency": "USD", "condition": "new", "warranty": "export", "isBundle": false } },
+    { "source": "courts.com.sg", "url": "https://www.courts.com.sg/golden-s25u-4", "title": "Samsung Galaxy S25 Ultra 256GB Titanium Black", "priceText": "S$1,698.00",
+      "expect": { "match": "needs_llm", "truth": "same", "price": 1698, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "qoo10.sg", "url": "https://www.qoo10.sg/golden-s25u-5", "title": "Samsung Galaxy S25+ 256GB Navy SM-S936B", "priceText": "S$1,198.00",
+      "expect": { "match": "different", "truth": "different", "price": 1198, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": false } },
+    { "source": "shopee.sg", "url": "https://shopee.sg/golden-s25u-6", "title": "Samsung Galaxy S25 Ultra 256GB Titanium Black + Free Case + Screen Protector", "priceText": "Save S$200 S$1,648.00",
+      "expect": { "match": "needs_llm", "truth": "same", "price": 1648, "currency": "SGD", "condition": "new", "warranty": "unknown", "isBundle": true } }
+  ]
+}
