@@ -175,7 +175,7 @@ export class ItemAgent extends Agent<Env, ItemState> {
       this.setState({
         ...this.state,
         status: outcome.ok ? "choosing" : "error",
-        phase: outcome.ok ? "Pick up to two to compare" : "Failed",
+        phase: outcome.ok ? `Found ${outcome.candidates.length} models` : "Failed",
         error: outcome.error,
         candidates: outcome.ok ? outcome.candidates : null,
         finishedAt: Date.now(),

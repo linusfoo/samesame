@@ -23,7 +23,7 @@ export function detectCondition(text: string): Condition {
   const t = text.toLowerCase();
   if (/\b(refurb(ished)?|renewed|reconditioned)\b/.test(t)) return "refurbished";
   if (/\b(display (set|unit)|ex[- ]display|demo (set|unit))\b/.test(t)) return "display";
-  if (/\b(used|pre[- ]?owned|second[- ]?hand|2nd hand)\b/.test(t)) return "used";
+  if (/\b(used|pre[- ]?owned|second[- ]?hand|2nd hand|like new|lightly used)\b/.test(t)) return "used";
   return "new";
 }
 

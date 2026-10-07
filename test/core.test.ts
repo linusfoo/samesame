@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { extractModelCodes, parseModelCode, sameFamily } from "../src/core/sku";
 import { parsePrice } from "../src/core/price";
-import { detectVariant, pinnedFromRequest } from "../src/core/listing";
+import { detectCondition, detectVariant, pinnedFromRequest } from "../src/core/listing";
 import { applyLlmDecision, groupListings, matchListing, variantCounts } from "../src/core/match";
 import { canUse, consume, currentQuota, emptyQuota, remaining, sgDay } from "../src/core/quota";
 import { checkPicks, parseResearchInput } from "../src/core/request";
@@ -69,6 +69,13 @@ describe("detectVariant", () => {
       color: "titanium black",
       storage: "256GB",
     });
+  });
+});
+
+describe("detectCondition", () => {
+  it("reads 'like new' as a used unit", () => {
+    expect(detectCondition("Sony XM6 headphones like new, box included")).toBe("used");
+    expect(detectCondition("Sony WH-1000XM6 brand new sealed")).toBe("new");
   });
 });
 
