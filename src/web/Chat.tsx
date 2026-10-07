@@ -56,6 +56,7 @@ export function Chat({ state, actions }: { state: ItemState; actions: Actions })
   return (
     <section className="chat" aria-labelledby="chat-title">
       <header className="chat-head">
+        <span className="chat-orb" aria-hidden="true" data-busy={busy || undefined} />
         <h2 id="chat-title">Ask about these products</h2>
         <p className="quiet">
           Answers come from what the search found first. If that doesn't say, it can look up to 3 things on the web, from
@@ -86,6 +87,8 @@ export function Chat({ state, actions }: { state: ItemState; actions: Actions })
             <li className="turn turn-assistant turn-pending">
               <span className="turn-who">SameSame</span>
               <p className="turn-text">
+                <i aria-hidden="true" />
+                <i aria-hidden="true" />
                 <i aria-hidden="true" />
                 Looking into it…
               </p>

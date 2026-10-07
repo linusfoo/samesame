@@ -26,13 +26,13 @@ export function Results({ state, actions }: { state: ItemState; actions: Actions
   return (
     <>
       <Status state={state} />
+      <Chat state={state} actions={actions} />
       {state.mode === "category" && state.candidates && (
         <Candidates state={state} actions={actions} />
       )}
       {state.products.map((p) => (
         <Product key={p.key} result={p} showStatus={state.products.length > 1} />
       ))}
-      <Chat state={state} actions={actions} />
       {state.trace.length > 0 && <RunLog state={state} />}
     </>
   );
