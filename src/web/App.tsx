@@ -77,25 +77,23 @@ export function App() {
 
 function Footer({ state }: { state: ItemState }) {
   const c = state.sourcesConfigured;
-  const missing = [
-    !c.llm && "OPENCODE_API_KEY",
-    !c.brave && "BRAVE_API_KEY",
-    !c.tavily && "TAVILY_API_KEY",
-    !c.browser && "CF_ACCOUNT_ID and CF_BROWSER_TOKEN",
-  ].filter(Boolean);
+  const missing = [!c.llm && "OPENCODE_API_KEY", !c.search && "SERPER_API_KEY"].filter(Boolean);
   const left = state.quotaLeft;
   return (
     <footer className="footer">
       {left && (
         <p>
-          Left today for new searches: {left.brave} Brave searches, {left.tavily} Tavily calls and {left.browser} page
-          reads. The rest is kept for watchlist checks.
+          Left today for new searches: {left.serper} web searches and {left.jina + left.browser} page reads. The rest
+          is kept for watchlist checks.
         </p>
       )}
       {missing.length > 0 && (
         <p className="warn">
-          Not set up: {missing.join(", ")}. Add {missing.length === 1 ? "it" : "them"} to .dev.vars.
+          Not set up: {missing.join(" and ")}. Add {missing.length === 1 ? "it" : "them"} to .dev.vars.
         </p>
+      )}
+      {!c.browser && (
+        <p>Optional: add CF_ACCOUNT_ID and CF_BROWSER_TOKEN for a second way to read pages a shop blocks.</p>
       )}
     </footer>
   );

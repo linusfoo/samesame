@@ -1,23 +1,21 @@
 /**
- * Build the tool set an agent sees: web_search, tavily_search and read_page.
+ * Build the tool set an agent sees: web_search and read_page.
  *
- * Every call goes through the daily quota gate. read_page tries Tavily
- * extract first and falls back to Browser Rendering, and only opens http(s)
- * URLs on hosts that came back from a search in this run.
+ * Every call goes through the daily quota gate. web_search uses Serper.
+ * read_page tries Jina Reader first and falls back to Browser Rendering, and
+ * only opens http(s) URLs on hosts that came back from a search in this run.
  */
 
 import type { Tool } from "../../core/quota";
-import { formatBrave, type BraveResponse } from "./brave";
 import { asUntrusted, type AgentTool } from "./registry";
-import { urlsIn } from "./tavily-mcp";
+import { formatSerper, type SerperResponse } from "./serper";
 
 export type QuotaGate = { tryUse(tool: Tool): boolean };
 
 /** IO the tools need; null means that source is not configured. */
 export type ToolIO = {
-  brave: ((query: string) => Promise<BraveResponse>) | null;
-  tavilySearch: ((query: string) => Promise<string>) | null;
-  tavilyExtract: ((url: string) => Promise<string>) | null;
+  search: ((query: string) => Promise<SerperResponse>) | null;
+  readPage: ((url: string) => Promise<string>) | null;
   browserMarkdown: ((url: string) => Promise<string>) | null;
 };
 
@@ -38,7 +36,7 @@ export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
   tools.push({
     name: "web_search",
     description:
-      "Search the web from Singapore. Returns titles, URLs and snippets (sometimes prices). Use for finding where a product is sold in Singapore.",
+      "Search Google from Singapore. Returns titles, URLs and snippets (sometimes prices and ratings). Use for finding where a product is sold in Singapore, and for reviews.",
     parameters: {
       type: "object",
       properties: { query: { type: "string", description: "Search query" } },
@@ -47,41 +45,13 @@ export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
     async run(args) {
       const query = String(args.query ?? "").trim();
       if (!query) throw new Error("query is required");
-      if (io.brave && quota.tryUse("brave")) {
-        const { text, urls } = formatBrave(await io.brave(query));
-        remember(urls);
-        return asUntrusted("brave search", text);
-      }
-      if (io.tavilySearch && quota.tryUse("tavily")) {
-        const text = await io.tavilySearch(query);
-        remember(urlsIn(text));
-        return asUntrusted("tavily search", text);
-      }
-      throw new Error("no search budget left today");
+      if (!io.search) throw new Error("search is not set up (SERPER_API_KEY)");
+      if (!quota.tryUse("serper")) throw new Error("no search budget left today");
+      const { text, urls } = formatSerper(await io.search(query));
+      remember(urls);
+      return asUntrusted("web search", text);
     },
   });
-
-  if (io.tavilySearch) {
-    const tavilySearch = io.tavilySearch;
-    tools.push({
-      name: "tavily_search",
-      description:
-        "AI search via Tavily (MCP). Returns cleaned page content for the top results. Use for reviews or when web_search snippets lack prices.",
-      parameters: {
-        type: "object",
-        properties: { query: { type: "string", description: "Search query" } },
-        required: ["query"],
-      },
-      async run(args) {
-        const query = String(args.query ?? "").trim();
-        if (!query) throw new Error("query is required");
-        if (!quota.tryUse("tavily")) throw new Error("Tavily budget used up today");
-        const text = await tavilySearch(query);
-        remember(urlsIn(text));
-        return asUntrusted("tavily search", text);
-      },
-    });
-  }
 
   tools.push({
     name: "read_page",
@@ -99,13 +69,13 @@ export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
       if (!seenHosts.has(host)) throw new Error(`${host} did not appear in any search result`);
 
       const errors: string[] = [];
-      if (io.tavilyExtract && quota.tryUse("tavily")) {
+      if (io.readPage && quota.tryUse("jina")) {
         try {
-          const text = await io.tavilyExtract(url);
+          const text = await io.readPage(url);
           if (text.length >= MIN_PAGE_CHARS) return asUntrusted(url, text);
-          errors.push("tavily: page too short");
+          errors.push("reader: page too short");
         } catch (err) {
-          errors.push(`tavily: ${String(err)}`);
+          errors.push(`reader: ${String(err)}`);
         }
       }
       if (io.browserMarkdown && quota.tryUse("browser")) {

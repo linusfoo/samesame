@@ -3,7 +3,7 @@ Build story 1 first, then stop so I can try it. Plan before you code, commit in 
 
 ## Conventions
 - TypeScript throughout. Frontend is React + Vite; backend is a Cloudflare Worker with the Agents SDK (Durable Objects). Deploy with `npm run deploy`.
-- Runtime dependencies are accepted here (agents, react, zod, @modelcontextprotocol/sdk); keep the list short.
+- Runtime dependencies are accepted here (agents, react, zod, and @modelcontextprotocol/sdk only because `agents` requires it as a peer); keep the list short.
 - Pure logic lives in `src/core` and has unit tests. IO lives in `src/worker`; each tool is split into a fetch function (IO) and a pure format function.
 - Test both the pure core and the agent loop (with a fake model and fake tools). Run `npm test` before committing.
 - Secrets come from `env` only (`.dev.vars` locally, `wrangler secret` when deployed), never in code or committed files.
@@ -37,7 +37,7 @@ Checks across several platforms can produce accurate, comparable price, quality 
 
 ## Market and sources
 - Singapore only, prices in SGD.
-- Agents find their own sources with web search (`country=SG`). A list of known SG shops (Shopee, Lazada, Amazon.sg, Qoo10, Courts, Challenger, Harvey Norman, Best Denki) is a hint, not a limit.
+- Agents find their own sources with web search (Google results set to Singapore, `gl=sg`). A list of known SG shops (Shopee, Lazada, Amazon.sg, Qoo10, Courts, Challenger, Harvey Norman, Best Denki) is a hint, not a limit.
 
 ## Matching
 - **Family key:** the normalised model number or SKU (case, hyphens, spaces, colour and region suffixes removed). Same family key means the same product.
@@ -51,8 +51,8 @@ Checks across several platforms can produce accurate, comparable price, quality 
 ## Agents and tools
 - Each item has three sub-agents: price, quality and aftersales. Each runs a bounded tool loop (at most 6 tool calls, 90 seconds) and must finish through a `submit_result` tool that is validated; one retry, then the field is marked missing.
 - LLM: DeepSeek V4.1 Flash via OpenCode Go (OpenAI-compatible).
-- Tools: Tavily through its remote MCP server (search and extract), Brave Search through its REST API, and Cloudflare Browser Rendering (`/markdown`) as a fallback when extraction fails. All sit behind one tool interface.
-- A daily budget counter stops runs before the free Brave, Tavily and browser quotas run out, and the dashboard shows what is left. 30% of each day's budget is reserved for watchlist re-checks, which use Browser Rendering on saved listing URLs rather than search; new searches use the other 70%.
+- Tools: Serper for web search (Google results; free plan of 2,500 searches once, no card), Jina Reader for reading pages (works with no key; optional free `JINA_API_KEY` raises its rate limit), and Cloudflare Browser Rendering (`/markdown`) as an optional fallback when Jina is blocked (free Cloudflare account, no card). All sit behind one tool interface. Brave and Tavily were dropped because their free plans now need a card.
+- A daily budget counter (40 searches, 100 page reads, 20 browser pages) stops runs before the free quotas run out, and the dashboard shows what is left. 30% of each day's budget is reserved for watchlist re-checks, which use Browser Rendering on saved listing URLs rather than search; new searches use the other 70%.
 
 ## First version
 1. **Match.** As a shopper, I enter either a specific product or just a category, plus a description and my priorities. For a specific product I see it matched across the sources the agents found; for a category I see candidate products, each matched across sources. Not done until the golden set has been tested and passes; then a live run shows the same item clearly across at least three sources, each with source, price in SGD, condition, warranty and how it was matched.

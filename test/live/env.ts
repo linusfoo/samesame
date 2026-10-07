@@ -4,12 +4,10 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { buildTools, type ToolIO } from "../../src/worker/tools/index";
-import { fetchBrave } from "../../src/worker/tools/brave";
 import { fetchMarkdown } from "../../src/worker/tools/browser";
-import { tavilyExtract, tavilyMcpUrl, tavilySearch, type McpCaller, type McpToolResult } from "../../src/worker/tools/tavily-mcp";
+import { fetchJina } from "../../src/worker/tools/jina";
+import { fetchSerper } from "../../src/worker/tools/serper";
 import type { AgentTool } from "../../src/worker/tools/registry";
 
 export function readDevVars(): Record<string, string> {
@@ -26,23 +24,11 @@ export function readDevVars(): Record<string, string> {
   }
 }
 
-async function connectTavily(key: string): Promise<McpCaller | null> {
-  const client = new Client({ name: "buying-helper-live-test", version: "0.1.0" });
-  await client.connect(new StreamableHTTPClientTransport(new URL(tavilyMcpUrl(key))));
-  const names = (await client.listTools()).tools.map((t) => t.name);
-  return {
-    toolNames: () => names,
-    call: async (name, args) => (await client.callTool({ name, arguments: args })) as McpToolResult,
-  };
-}
-
 /** A fresh tool set over the real APIs (no daily quota gate). */
-export async function liveTools(env: Record<string, string>): Promise<AgentTool[]> {
-  const mcp = env.TAVILY_API_KEY ? await connectTavily(env.TAVILY_API_KEY) : null;
+export function liveTools(env: Record<string, string>): AgentTool[] {
   const io: ToolIO = {
-    brave: env.BRAVE_API_KEY ? (q) => fetchBrave(env.BRAVE_API_KEY, q) : null,
-    tavilySearch: mcp ? (q) => tavilySearch(mcp, q) : null,
-    tavilyExtract: mcp ? (u) => tavilyExtract(mcp, u) : null,
+    search: env.SERPER_API_KEY ? (q) => fetchSerper(env.SERPER_API_KEY, q) : null,
+    readPage: (u) => fetchJina(u, env.JINA_API_KEY || undefined),
     browserMarkdown:
       env.CF_ACCOUNT_ID && env.CF_BROWSER_TOKEN ? (u) => fetchMarkdown(env.CF_ACCOUNT_ID, env.CF_BROWSER_TOKEN, u) : null,
   };

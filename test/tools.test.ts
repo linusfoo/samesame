@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatBrave } from "../src/worker/tools/brave";
+import { formatSerper } from "../src/worker/tools/serper";
 import { buildTools, type QuotaGate, type ToolIO } from "../src/worker/tools/index";
-import { findTool, mcpText } from "../src/worker/tools/tavily-mcp";
 import type { Tool } from "../src/core/quota";
 
 const LONG_PAGE = "Sony WH-1000XM6 S$529 ".repeat(20);
 
 function gate(limits: Partial<Record<Tool, number>> = {}): QuotaGate & { used: Record<Tool, number> } {
-  const used = { brave: 0, tavily: 0, browser: 0 };
+  const used = { serper: 0, jina: 0, browser: 0 };
   return {
     used,
     tryUse(tool) {
@@ -18,15 +17,14 @@ function gate(limits: Partial<Record<Tool, number>> = {}): QuotaGate & { used: R
   };
 }
 
-const braveHit = {
-  web: { results: [{ title: "<b>Sony</b> XM6", url: "https://www.lazada.sg/p/xm6", description: "S$529 <strong>deal</strong>" }] },
+const serperHit = {
+  organic: [{ title: "<b>Sony</b> XM6", link: "https://www.lazada.sg/p/xm6", snippet: "S$529  <strong>deal</strong>" }],
 };
 
 function io(overrides: Partial<ToolIO> = {}): ToolIO {
   return {
-    brave: async () => braveHit,
-    tavilySearch: async () => "Result: https://shopee.sg/xm6 S$579",
-    tavilyExtract: async () => LONG_PAGE,
+    search: async () => serperHit,
+    readPage: async () => LONG_PAGE,
     browserMarkdown: async () => LONG_PAGE,
     ...overrides,
   };
@@ -34,45 +32,38 @@ function io(overrides: Partial<ToolIO> = {}): ToolIO {
 
 const byName = (tools: ReturnType<typeof buildTools>, name: string) => tools.find((t) => t.name === name)!;
 
-describe("formatBrave", () => {
-  it("strips markup and lists URLs", () => {
-    const { text, urls } = formatBrave(braveHit);
-    expect(text).toContain("1. Sony XM6");
-    expect(text).toContain("S$529 deal");
-    expect(urls).toEqual(["https://www.lazada.sg/p/xm6"]);
+describe("formatSerper", () => {
+  it("strips markup, keeps price and rating, and lists URLs", () => {
+    const { text, urls } = formatSerper({
+      organic: [
+        ...serperHit.organic,
+        { title: "Sony XM6 | Shopee", link: "https://shopee.sg/xm6", snippet: "Free shipping", price: "S$579.00", rating: 4.9, ratingCount: 1200 },
+      ],
+    });
+    expect(text).toContain("1. Sony XM6\n   https://www.lazada.sg/p/xm6\n   S$529 deal");
+    expect(text).toContain("2. Sony XM6 | Shopee | price: S$579.00 | rating 4.9 (1200)");
+    expect(urls).toEqual(["https://www.lazada.sg/p/xm6", "https://shopee.sg/xm6"]);
   });
   it("handles empty results", () => {
-    expect(formatBrave({}).text).toBe("No results.");
-  });
-});
-
-describe("tavily MCP helpers", () => {
-  it("finds tools whatever the naming style", () => {
-    expect(findTool(["tavily-search", "tavily-extract"], "extract")).toBe("tavily-extract");
-    expect(findTool(["tavily_search"], "search")).toBe("tavily_search");
-    expect(findTool(["other"], "search")).toBeNull();
-  });
-  it("throws on MCP error results", () => {
-    expect(() => mcpText({ isError: true, content: [{ type: "text", text: "bad key" }] })).toThrow("bad key");
+    expect(formatSerper({})).toEqual({ text: "No results.", urls: [] });
   });
 });
 
 describe("web_search", () => {
-  it("uses Brave and wraps output as untrusted", async () => {
+  it("uses Serper and wraps output as untrusted", async () => {
     const q = gate();
     const out = await byName(buildTools(io(), q), "web_search").run({ query: "xm6" });
     expect(out).toContain("<untrusted_web_content");
-    expect(q.used.brave).toBe(1);
+    expect(out).toContain("lazada.sg");
+    expect(q.used.serper).toBe(1);
   });
-  it("falls back to Tavily when the Brave budget is spent", async () => {
-    const q = gate({ brave: 0 });
-    const out = await byName(buildTools(io(), q), "web_search").run({ query: "xm6" });
-    expect(out).toContain("shopee.sg");
-    expect(q.used.tavily).toBe(1);
-  });
-  it("refuses when every budget is spent", async () => {
-    const tool = byName(buildTools(io(), gate({ brave: 0, tavily: 0 })), "web_search");
+  it("refuses when the search budget is spent", async () => {
+    const tool = byName(buildTools(io(), gate({ serper: 0 })), "web_search");
     await expect(tool.run({ query: "xm6" })).rejects.toThrow("no search budget");
+  });
+  it("says so when search isn't set up", async () => {
+    const tool = byName(buildTools(io({ search: null }), gate()), "web_search");
+    await expect(tool.run({ query: "xm6" })).rejects.toThrow("SERPER_API_KEY");
   });
 });
 
@@ -88,18 +79,25 @@ describe("read_page", () => {
     const read = byName(buildTools(io(), gate()), "read_page");
     await expect(read.run({ url: "file:///etc/passwd" })).rejects.toThrow("http(s)");
   });
-  it("falls back to the browser when Tavily extract fails", async () => {
+  it("reads with Jina Reader first", async () => {
     const q = gate();
-    const tools = buildTools(io({ tavilyExtract: async () => { throw new Error("blocked"); } }), q);
+    const tools = buildTools(io(), q);
+    await byName(tools, "web_search").run({ query: "xm6" });
+    const out = await byName(tools, "read_page").run({ url: "https://www.lazada.sg/p/xm6" });
+    expect(out).not.toContain("(browser)");
+    expect(q.used).toMatchObject({ jina: 1, browser: 0 });
+  });
+  it("falls back to the browser when Jina Reader is blocked", async () => {
+    const q = gate();
+    const tools = buildTools(io({ readPage: async () => { throw new Error("Jina Reader returned 451"); } }), q);
     await byName(tools, "web_search").run({ query: "xm6" });
     const out = await byName(tools, "read_page").run({ url: "https://www.lazada.sg/p/xm6" });
     expect(out).toContain("(browser)");
     expect(q.used.browser).toBe(1);
   });
-  it("skips the browser when its budget is spent and reports why", async () => {
-    const q = gate({ browser: 0 });
-    const tools = buildTools(io({ tavilyExtract: async () => "too short" }), q);
+  it("reports why when the reader fails and there is no browser", async () => {
+    const tools = buildTools(io({ readPage: async () => "too short", browserMarkdown: null }), gate());
     await byName(tools, "web_search").run({ query: "xm6" });
-    await expect(byName(tools, "read_page").run({ url: "https://www.lazada.sg/p/xm6" })).rejects.toThrow("page too short");
+    await expect(byName(tools, "read_page").run({ url: "https://www.lazada.sg/p/xm6" })).rejects.toThrow("reader: page too short");
   });
 });

@@ -68,7 +68,7 @@ export const DISCOVERY_SYSTEM = `You are the price agent of a Singapore shopping
 Find where the requested product is sold in Singapore and report each listing you actually saw.
 
 How to work:
-- Search first (web_search, tavily_search), then read_page only for promising listings missing a price or model number.
+- Search first (web_search), then read_page only for promising listings missing a price or model number.
 - Aim for at least 3 different shops. Useful Singapore shops include: ${SG_SHOP_HINTS.join(", ")}. Others are fine.
 - You have a small tool budget (about 6 calls). Do not repeat near-identical searches.
 
@@ -96,7 +96,7 @@ export const CANDIDATES_SYSTEM = `You help a Singapore shopper who knows the kin
 Find 3 to 5 specific models sold in Singapore that fit their description and priorities.
 
 How to work:
-- Search (web_search, tavily_search) for current Singapore listings, reviews and shop pages. You have about 6 tool calls.
+- Search (web_search) for current Singapore listings, reviews and shop pages. You have about 6 tool calls.
 - Prefer models you saw on sale in Singapore. Never invent a model.
 
 Rules for submit_result:

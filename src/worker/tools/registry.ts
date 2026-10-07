@@ -1,6 +1,6 @@
 /**
- * The tool interface every data source sits behind, whether it is a REST call
- * (Brave, Browser Rendering) or an MCP server (Tavily). Agents only see this.
+ * The tool interface every data source sits behind, all plain REST calls
+ * (Serper, Jina Reader, Browser Rendering). Agents only see this.
  */
 
 import type { ToolDefinition } from "../llm";

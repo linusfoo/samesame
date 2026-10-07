@@ -1,6 +1,6 @@
 /**
- * The three simulated searches, run for real: OpenCode Go, Brave, Tavily over
- * MCP and Browser Rendering, with keys from .dev.vars. Uses real quota.
+ * The three simulated searches, run for real: OpenCode Go, Serper,
+ * Jina Reader and Browser Rendering, with keys from .dev.vars. Uses real quota.
  *
  *   npm run test:live
  *
@@ -24,7 +24,7 @@ const FIVE_MINUTES = 5 * 60_000;
 
 const env = readDevVars();
 
-describe.skipIf(!env.OPENCODE_API_KEY)("live searches", () => {
+describe.skipIf(!env.OPENCODE_API_KEY || !env.SERPER_API_KEY)("live searches", () => {
   for (const input of PRODUCTS) {
     it(
       input.query,
@@ -32,7 +32,7 @@ describe.skipIf(!env.OPENCODE_API_KEY)("live searches", () => {
         const started = Date.now();
         const outcome = await runResearch(input, {
           model: openCodeModel(env.OPENCODE_API_KEY),
-          tools: await liveTools(env),
+          tools: liveTools(env),
         });
         const elapsed = Date.now() - started;
         const toolCalls = outcome.trace.filter((e) => e.kind === "tool" && !e.detail.startsWith("refused")).length;

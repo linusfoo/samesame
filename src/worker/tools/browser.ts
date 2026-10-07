@@ -1,5 +1,5 @@
 /**
- * Cloudflare Browser Rendering REST /markdown: the fallback when Tavily
+ * Cloudflare Browser Rendering REST /markdown: the fallback when Jina Reader
  * cannot extract a page. Free plan minutes are scarce, so callers gate it
  * behind the quota.
  */

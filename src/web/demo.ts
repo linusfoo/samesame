@@ -25,8 +25,8 @@ const base: ItemState = {
   startedAt: t0,
   finishedAt: t0 + 72_000,
   quota: null,
-  quotaLeft: { brave: 30, tavily: 15, browser: 12 },
-  sourcesConfigured: { brave: true, tavily: true, browser: true, llm: true },
+  quotaLeft: { serper: 21, jina: 63, browser: 12 },
+  sourcesConfigured: { search: true, browser: true, llm: true },
 };
 
 function product(
@@ -167,6 +167,6 @@ export const DEMOS: Record<string, ItemState> = {
     phase: "Failed",
     error: "Discovery failed: the model stopped without submitting a result twice.",
     input: { mode: "model", query: "Sony WH-1000XM6 headphones", description: "", priorities: "" },
-    sourcesConfigured: { brave: true, tavily: false, browser: false, llm: true },
+    sourcesConfigured: { search: true, browser: false, llm: true },
   },
 };

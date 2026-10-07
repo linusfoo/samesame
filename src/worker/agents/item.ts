@@ -20,9 +20,9 @@ import {
   type ResearchDeps,
 } from "../research";
 import { fetchMarkdown } from "../tools/browser";
-import { fetchBrave } from "../tools/brave";
 import { buildTools, type ToolIO } from "../tools/index";
-import { tavilyExtract, tavilyMcpUrl, tavilySearch, type McpCaller } from "../tools/tavily-mcp";
+import { fetchJina } from "../tools/jina";
+import { fetchSerper } from "../tools/serper";
 
 export type ItemStatus = "idle" | "running" | "choosing" | "done" | "error";
 
@@ -56,10 +56,9 @@ export type ItemState = {
   finishedAt: number | null;
   quota: QuotaState | null;
   quotaLeft: Usage | null;
-  sourcesConfigured: { brave: boolean; tavily: boolean; browser: boolean; llm: boolean };
+  sourcesConfigured: { search: boolean; browser: boolean; llm: boolean };
 };
 
-const TAVILY_SERVER_ID = "tavily";
 const MAX_TRACE_IN_STATE = 80;
 
 export class ItemAgent extends Agent<Env, ItemState> {
@@ -77,7 +76,7 @@ export class ItemAgent extends Agent<Env, ItemState> {
     finishedAt: null,
     quota: null,
     quotaLeft: null,
-    sourcesConfigured: { brave: false, tavily: false, browser: false, llm: false },
+    sourcesConfigured: { search: false, browser: false, llm: false },
   };
 
   async onStart() {
@@ -114,9 +113,10 @@ export class ItemAgent extends Agent<Env, ItemState> {
     const parsed = parseResearchInput(raw);
     if (!parsed.ok) return { started: false, reason: parsed.reason };
     if (!this.env.OPENCODE_API_KEY) return { started: false, reason: "OPENCODE_API_KEY is not set" };
+    if (!this.env.SERPER_API_KEY) return { started: false, reason: "SERPER_API_KEY is not set" };
 
     const quota = currentQuota(this.state.quota, new Date());
-    if (!canUse(quota, "brave") && !canUse(quota, "tavily")) {
+    if (!canUse(quota, "serper")) {
       return { started: false, reason: "today's search budget is used up; try again tomorrow" };
     }
 
@@ -171,7 +171,7 @@ export class ItemAgent extends Agent<Env, ItemState> {
         this.finishRun();
         return;
       }
-      const outcome = await runCandidates(input, await this.deps());
+      const outcome = await runCandidates(input, this.deps());
       this.setState({
         ...this.state,
         status: outcome.ok ? "choosing" : "error",
@@ -212,7 +212,7 @@ export class ItemAgent extends Agent<Env, ItemState> {
       startedAt,
       finishedAt: null,
     });
-    const deps = await this.deps();
+    const deps = this.deps();
     const outcome = await runResearch(input, {
       ...deps,
       item: key,
@@ -260,12 +260,10 @@ export class ItemAgent extends Agent<Env, ItemState> {
     this.setState({ ...this.state, products });
   }
 
-  private async deps(): Promise<ResearchDeps> {
-    const mcp = await this.tavilyCaller();
+  private deps(): ResearchDeps {
     const io: ToolIO = {
-      brave: this.env.BRAVE_API_KEY ? (q) => fetchBrave(this.env.BRAVE_API_KEY!, q) : null,
-      tavilySearch: mcp ? (q) => tavilySearch(mcp, q) : null,
-      tavilyExtract: mcp ? (u) => tavilyExtract(mcp, u) : null,
+      search: this.env.SERPER_API_KEY ? (q) => fetchSerper(this.env.SERPER_API_KEY!, q) : null,
+      readPage: (u) => fetchJina(u, this.env.JINA_API_KEY),
       browserMarkdown:
         this.env.CF_ACCOUNT_ID && this.env.CF_BROWSER_TOKEN
           ? (u) => fetchMarkdown(this.env.CF_ACCOUNT_ID!, this.env.CF_BROWSER_TOKEN!, u)
@@ -299,38 +297,9 @@ export class ItemAgent extends Agent<Env, ItemState> {
     return true;
   }
 
-  private async tavilyCaller(): Promise<McpCaller | null> {
-    const key = this.env.TAVILY_API_KEY;
-    if (!key) return null;
-    try {
-      const existing = this.getMcpServers().servers[TAVILY_SERVER_ID];
-      if (!existing) {
-        const result = await this.addMcpServer("tavily", tavilyMcpUrl(key), { id: TAVILY_SERVER_ID });
-        if (result.state !== "ready") return null;
-      }
-      await this.mcp.waitForConnections({ timeout: 10_000 });
-      const names = this.mcp
-        .listTools()
-        .filter((t) => t.serverId === TAVILY_SERVER_ID)
-        .map((t) => t.name);
-      if (names.length === 0) return null;
-      return {
-        toolNames: () => names,
-        call: async (name, args) =>
-          (await this.mcp.callTool({ serverId: TAVILY_SERVER_ID, name, arguments: args })) as Awaited<
-            ReturnType<McpCaller["call"]>
-          >,
-      };
-    } catch (err) {
-      console.warn("Tavily MCP unavailable:", err);
-      return null;
-    }
-  }
-
   private sourcesConfigured(): ItemState["sourcesConfigured"] {
     return {
-      brave: Boolean(this.env.BRAVE_API_KEY),
-      tavily: Boolean(this.env.TAVILY_API_KEY),
+      search: Boolean(this.env.SERPER_API_KEY),
       browser: Boolean(this.env.CF_ACCOUNT_ID && this.env.CF_BROWSER_TOKEN),
       llm: Boolean(this.env.OPENCODE_API_KEY),
     };
