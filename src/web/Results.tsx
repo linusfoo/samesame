@@ -145,10 +145,10 @@ function Product({ result: r, showStatus }: { result: ProductResult; showStatus:
       {g && (
         <>
           <PriceRail listings={all} />
-          <Group title="Same item" listings={g.matched} />
-          <Group title="Other colours and sizes" listings={g.variants} />
-          <Group title="Not confirmed" note="The listing doesn't say enough to be sure. Check it before buying." listings={g.unconfirmed} />
-          <Group title="Different products" note="Similar names, different models." listings={g.different} collapsed />
+          <Group n={1} title="Same item" listings={g.matched} />
+          <Group n={2} title="Other colours and sizes" listings={g.variants} />
+          <Group n={3} title="Not confirmed" note="The listing doesn't say enough to be sure. Check it before buying." listings={g.unconfirmed} />
+          <Group n={4} title="Different products" note="Similar names, different models." listings={g.different} collapsed />
           {counting.length === 0 && all.length > 0 && (
             <p className="quiet">None of these listings count toward the comparison; each says why below its price.</p>
           )}
@@ -158,7 +158,7 @@ function Product({ result: r, showStatus }: { result: ProductResult; showStatus:
   );
 }
 
-function Group({ title, note, listings, collapsed }: { title: string; note?: string; listings: MatchedListing[]; collapsed?: boolean }) {
+function Group({ n, title, note, listings, collapsed }: { n: number; title: string; note?: string; listings: MatchedListing[]; collapsed?: boolean }) {
   if (listings.length === 0) return null;
   const body = (
     <>
@@ -175,6 +175,7 @@ function Group({ title, note, listings, collapsed }: { title: string; note?: str
       <details className="group">
         <summary>
           <h3>
+            <span className="step">0{n}</span>
             {title} <span className="count">{listings.length}</span>
           </h3>
         </summary>
@@ -185,6 +186,7 @@ function Group({ title, note, listings, collapsed }: { title: string; note?: str
   return (
     <section className="group">
       <h3>
+        <span className="step">0{n}</span>
         {title} <span className="count">{listings.length}</span>
       </h3>
       {body}

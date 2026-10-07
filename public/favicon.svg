@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- SameSame: two identical price tags stacked into an equals sign. -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="8" fill="#16140f" stroke="#55502f"/>
+  <path d="M5 11 8.5 7.5H26.5V14.5H8.5Z" fill="#ff7a1a"/>
+  <path d="M5 21 8.5 17.5H26.5V24.5H8.5Z" fill="#ff7a1a"/>
+  <circle cx="10" cy="11" r="1.4" fill="#16140f"/>
+  <circle cx="10" cy="21" r="1.4" fill="#16140f"/>
+</svg>

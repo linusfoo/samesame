@@ -49,11 +49,22 @@ export function Ask({ state, actions }: { state: ItemState | null; actions: Acti
         <legend className="sr-only">What do you know so far?</legend>
         <label>
           <input type="radio" name="mode" value="model" checked={mode === "model"} onChange={() => setMode("model")} />
-          <span>I know the model</span>
+          <span>
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M1.5 8 5 4.5h9.5v7H5Z" stroke="currentColor" strokeLinejoin="round" />
+              <circle cx="6" cy="8" r="1" fill="currentColor" />
+            </svg>
+            I know the model
+          </span>
         </label>
         <label>
           <input type="radio" name="mode" value="category" checked={mode === "category"} onChange={() => setMode("category")} />
-          <span>I only know the kind of product</span>
+          <span>
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" stroke="currentColor" strokeLinejoin="round" />
+            </svg>
+            I only know the kind of product
+          </span>
         </label>
       </fieldset>
 

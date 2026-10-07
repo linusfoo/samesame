@@ -4,6 +4,7 @@ import type { ItemAgent, ItemState } from "../worker/agents/item";
 import type { ResearchInput } from "../core/request";
 import { Ask } from "./Ask";
 import { Results } from "./Results";
+import { Logo } from "./Logo";
 
 const ITEM_KEY = "buying-helper:item";
 
@@ -59,9 +60,23 @@ export function App() {
 
   return (
     <div className="page">
+      <header className="topbar">
+        <div className="identity">
+          <span className="mark">
+            <Logo />
+          </span>
+          <div>
+            <strong>SameSame</strong>
+            <small>Singapore · prices in SGD</small>
+          </div>
+        </div>
+        <RunStatus state={state} />
+      </header>
+
       <header className="masthead">
-        <h1>Buying Helper</h1>
-        <p>Finds what you want across Singapore shops and shows which listings are really the same item, and what each one costs.</p>
+        <p className="kicker">Same item, every shop</p>
+        <h1>Find it once. See it everywhere it's sold.</h1>
+        <p>Agents search Singapore shops, work out which listings are really the same item, and hang every price on one scale.</p>
       </header>
 
       <Ask state={state} actions={actions} />
@@ -71,6 +86,24 @@ export function App() {
       </main>
 
       {state && <Footer state={state} />}
+    </div>
+  );
+}
+
+const STATUS_TEXT: Record<ItemState["status"], string> = {
+  idle: "Agents ready",
+  running: "Agents searching",
+  choosing: "Waiting for your pick",
+  done: "Run finished",
+  error: "Run stopped",
+};
+
+function RunStatus({ state }: { state: ItemState | null }) {
+  const status = state?.status ?? "idle";
+  return (
+    <div className={`run-status is-${state ? status : "offline"}`}>
+      <i aria-hidden="true" />
+      <span>{state ? STATUS_TEXT[status] : "Connecting"}</span>
     </div>
   );
 }
