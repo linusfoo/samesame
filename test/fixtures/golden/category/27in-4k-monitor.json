@@ -1,0 +1,22 @@
+{
+  "input": {
+    "mode": "category",
+    "query": "27-inch 4K monitor",
+    "description": "For photo editing and office work, USB-C would be nice",
+    "priorities": "Under S$700, local warranty"
+  },
+  "models": [
+    { "brand": "Dell", "name": "S2722QC", "modelNumber": "S2722QC", "inCategory": true },
+    { "brand": "Dell", "name": "UltraSharp U2723QE", "modelNumber": "U2723QE", "inCategory": true },
+    { "brand": "LG", "name": "UltraFine 27UP850N", "modelNumber": "27UP850N-W", "inCategory": true },
+    { "brand": "LG", "name": "27UL500", "modelNumber": "27UL500-W", "inCategory": true },
+    { "brand": "Gigabyte", "name": "M27U", "modelNumber": "M27U", "inCategory": true },
+    { "brand": "BenQ", "name": "PD2706U", "modelNumber": "PD2706U", "inCategory": true },
+    { "brand": "ASUS", "name": "ProArt PA279CRV", "modelNumber": "PA279CRV", "inCategory": true },
+    { "brand": "Samsung", "name": "ViewFinity S8 27\"", "modelNumber": "LS27B800PXEXXS", "inCategory": true },
+    { "brand": "LG", "name": "UltraGear 27GR95QE", "modelNumber": "27GR95QE-B", "inCategory": false, "note": "27-inch but 1440p, not 4K" },
+    { "brand": "Dell", "name": "S2721DS", "modelNumber": "S2721DS", "inCategory": false, "note": "27-inch 1440p" },
+    { "brand": "Samsung", "name": "Odyssey G7 32\"", "modelNumber": "LS32BG702EEXXS", "inCategory": false, "note": "4K but 32-inch" },
+    { "brand": "Dell", "name": "S3221QS", "modelNumber": "S3221QS", "inCategory": false, "note": "4K but 32-inch" }
+  ]
+}

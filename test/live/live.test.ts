@@ -8,18 +8,11 @@
  * shops matched, at most six tool calls, under five minutes.
  */
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { openCodeModel } from "../../src/worker/llm";
 import { runResearch, type ResearchInput } from "../../src/worker/research";
-import { buildTools, type ToolIO } from "../../src/worker/tools/index";
-import { fetchBrave } from "../../src/worker/tools/brave";
-import { fetchMarkdown } from "../../src/worker/tools/browser";
-import { tavilyExtract, tavilyMcpUrl, tavilySearch, type McpCaller, type McpToolResult } from "../../src/worker/tools/tavily-mcp";
 import { formatSgd } from "../../src/core/price";
+import { liveTools, readDevVars } from "./env";
 
 const PRODUCTS: ResearchInput[] = [
   { mode: "model", query: "Sony WH-1000XM6 headphones", description: "Black, over-ear", priorities: "Local warranty, cheapest new unit" },
@@ -29,30 +22,6 @@ const PRODUCTS: ResearchInput[] = [
 
 const FIVE_MINUTES = 5 * 60_000;
 
-function readDevVars(): Record<string, string> {
-  try {
-    const text = readFileSync(join(__dirname, "..", "..", ".dev.vars"), "utf8");
-    return Object.fromEntries(
-      text
-        .split(/\r?\n/)
-        .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
-        .map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim().replace(/^"|"$/g, "")]),
-    );
-  } catch {
-    return {};
-  }
-}
-
-async function connectTavily(key: string): Promise<McpCaller | null> {
-  const client = new Client({ name: "buying-helper-live-test", version: "0.1.0" });
-  await client.connect(new StreamableHTTPClientTransport(new URL(tavilyMcpUrl(key))));
-  const names = (await client.listTools()).tools.map((t) => t.name);
-  return {
-    toolNames: () => names,
-    call: async (name, args) => (await client.callTool({ name, arguments: args })) as McpToolResult,
-  };
-}
-
 const env = readDevVars();
 
 describe.skipIf(!env.OPENCODE_API_KEY)("live searches", () => {
@@ -60,20 +29,10 @@ describe.skipIf(!env.OPENCODE_API_KEY)("live searches", () => {
     it(
       input.query,
       async () => {
-        const mcp = env.TAVILY_API_KEY ? await connectTavily(env.TAVILY_API_KEY) : null;
-        const io: ToolIO = {
-          brave: env.BRAVE_API_KEY ? (q) => fetchBrave(env.BRAVE_API_KEY, q) : null,
-          tavilySearch: mcp ? (q) => tavilySearch(mcp, q) : null,
-          tavilyExtract: mcp ? (u) => tavilyExtract(mcp, u) : null,
-          browserMarkdown:
-            env.CF_ACCOUNT_ID && env.CF_BROWSER_TOKEN
-              ? (u) => fetchMarkdown(env.CF_ACCOUNT_ID, env.CF_BROWSER_TOKEN, u)
-              : null,
-        };
         const started = Date.now();
         const outcome = await runResearch(input, {
           model: openCodeModel(env.OPENCODE_API_KEY),
-          tools: buildTools(io, { tryUse: () => true }),
+          tools: await liveTools(env),
         });
         const elapsed = Date.now() - started;
         const toolCalls = outcome.trace.filter((e) => e.kind === "tool" && !e.detail.startsWith("refused")).length;

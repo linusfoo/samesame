@@ -30,7 +30,7 @@ Consumers who just want to buy something get stuck because many options look alm
 ## Riskiest bet
 Checks across several platforms can produce accurate, comparable price, quality and aftersales data for the same product.
 - **Test:** A hand-labelled golden set of real Singapore listings (`test/fixtures/golden`): about 30 listings across about six products, captured and labelled by you, each labelled same / variant / bundle / different, with condition and warranty type. At least one category case (e.g. "27-inch 4K monitor") with listings labelled in-category / not. Matching must pass it before live agent runs count. The current Claude-drafted fixtures (placeholder URLs) do not count; they may stay as a separate synthetic test.
-- **LLM matcher:** scored against the human `truth` labels using recorded LLM responses in `npm test` (free, deterministic), re-recorded live with `npm run test:live`.
+- **LLM matcher:** scored against the human `truth` labels using recorded LLM responses in `npm test` (free, deterministic), re-recorded live with `npm run test:live`. The category case is scored on the candidate models the LLM proposes: each must be labelled in-category. Rejecting the same product as "different" fails like a false merge does.
 - **Pass mark:** Model-number matches are 100% correct. LLM matching makes no false merges; a same-product listing left "unconfirmed" still passes. It must pass three live runs in a row. A live run then leads to the same decision you would have reached yourself, checked blind: the tester first sees the gathered data with no recommendation and makes their own decision, then the LLM's recommendation is revealed and compared.
 - **Result:** not run yet
 
