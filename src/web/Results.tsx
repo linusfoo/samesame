@@ -6,6 +6,7 @@ import { DEFAULT_CALLS_PER_RUN } from "../core/quota";
 import { formatSgd } from "../core/price";
 import { describeMatch, describeUnit, productName, whyNotCounted } from "./present";
 import { PriceRail } from "./PriceRail";
+import { Chat } from "./Chat";
 import type { Actions } from "./App";
 
 export function Results({ state, actions }: { state: ItemState; actions: Actions }) {
@@ -31,6 +32,7 @@ export function Results({ state, actions }: { state: ItemState; actions: Actions
       {state.products.map((p) => (
         <Product key={p.key} result={p} showStatus={state.products.length > 1} />
       ))}
+      <Chat state={state} actions={actions} />
       {state.trace.length > 0 && <RunLog state={state} />}
     </>
   );
@@ -224,7 +226,7 @@ function Listing({ listing: l }: { listing: MatchedListing }) {
   );
 }
 
-const AGENT: Record<string, string> = { discovery: "Price search", matcher: "Matcher", candidates: "Model finder" };
+const AGENT: Record<string, string> = { discovery: "Price search", matcher: "Matcher", candidates: "Model finder", chat: "Chat" };
 
 function RunLog({ state }: { state: ItemState }) {
   const tools = state.trace.filter((e) => e.kind === "tool" && !e.detail.startsWith("refused")).length;

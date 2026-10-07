@@ -1,6 +1,6 @@
 /**
  * Dev-only sample states for reviewing the page without API keys:
- * open /?demo=model, category, compared, running or error. Imported
+ * open /?demo=model, category, compared, chat, running or error. Imported
  * dynamically behind import.meta.env.DEV, so it never ships.
  * Listings go through the real matcher so the page shows real decisions.
  */
@@ -124,6 +124,26 @@ const lg = product(
   ],
 );
 
+const monitorChat: ItemState["chat"] = [
+  { role: "user", text: "Which of these has the best warranty?", at: t0 + 80_000 },
+  {
+    role: "assistant",
+    text: "For the Dell, shopee.sg (S$429.00), challenger.sg (S$469.00) and dell.com (S$479.00) all list local warranty; Shopee's title says 3 years. The Lazada listing doesn't say. For the LG, only Courts (S$599.00) lists local warranty; the cheaper Amazon unit (S$549.00) doesn't say.",
+    at: t0 + 86_000,
+    sources: [
+      { url: "https://shopee.sg/demo-d2", label: "shopee.sg" },
+      { url: "https://courts.com.sg/demo-l1", label: "courts.com.sg" },
+    ],
+  },
+  { role: "user", text: "Is the LG worth the extra for photo editing?", at: t0 + 120_000 },
+  {
+    role: "assistant",
+    text: "Reviews rate the LG 27UP850N's colour accuracy higher (about 95% DCI-P3 against the Dell's sRGB-level panel), and it charges a laptop at 96W against the Dell's 65W. For photo work that's the main reason to pay about S$120 more; for office work the Dell is enough.",
+    at: t0 + 131_000,
+    sources: [{ url: "https://www.rtings.com/monitor/demo", label: "rtings.com" }],
+  },
+];
+
 export const DEMOS: Record<string, ItemState> = {
   model: {
     ...base,
@@ -146,6 +166,17 @@ export const DEMOS: Record<string, ItemState> = {
     candidates: monitorCandidates,
     picked: [0, 1],
     products: [dell, lg],
+    chat: monitorChat,
+  },
+  chat: {
+    ...base,
+    mode: "category",
+    input: monitorInput,
+    candidates: monitorCandidates,
+    picked: [0, 1],
+    products: [dell, lg],
+    chat: [...monitorChat, { role: "user", text: "Can I return the Shopee one if it has dead pixels?", at: t0 + 140_000 }],
+    chatBusy: true,
   },
   running: {
     ...base,

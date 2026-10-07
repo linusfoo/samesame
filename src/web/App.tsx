@@ -20,12 +20,13 @@ function itemId(): string {
   }
 }
 
-/** ?demo=model|category|compared|running|error in dev shows a sample state. */
+/** ?demo=model|category|compared|chat|running|error in dev shows a sample state. */
 const demoName = import.meta.env.DEV ? new URLSearchParams(location.search).get("demo") : null;
 
 export type Actions = {
   start(input: ResearchInput): Promise<string | null>;
   compare(indexes: number[]): Promise<string | null>;
+  ask(question: string): Promise<string | null>;
 };
 
 export function App() {
@@ -55,6 +56,11 @@ export function App() {
       if (demo) return "This is a demo page; searches are off.";
       const res = await agent.stub.compareCandidates(indexes);
       return res.started ? null : `Couldn't compare: ${res.reason}.`;
+    },
+    async ask(question) {
+      if (demo) return "This is a demo page; questions are off.";
+      const res = await agent.stub.ask(question);
+      return res.started ? null : `Couldn't ask: ${res.reason}.`;
     },
   };
 

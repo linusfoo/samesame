@@ -426,3 +426,98 @@ details.group[open] summary { margin-bottom: 10px; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* --- Chat: follow-up questions -------------------------------------------- */
+
+.chat {
+  margin-top: 48px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.chat-head h2 { margin: 0 0 4px; font-size: 1.5rem; font-weight: 750; font-stretch: 72%; line-height: 1.1; }
+.chat-head .quiet { margin-bottom: 16px; max-width: 64ch; }
+
+.chat-turns {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0 4px 0 0;
+  display: grid;
+  gap: 14px;
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.turn { display: grid; gap: 4px; max-width: 78ch; }
+.turn-who { font: 10px var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+.turn-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.turn-user { justify-self: end; text-align: right; }
+.turn-user .turn-text {
+  padding: 9px 13px;
+  border-radius: 12px 12px 4px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+.turn-assistant { padding-left: 12px; border-left: 2px solid var(--amber); }
+.turn-assistant .turn-who { color: var(--amber); }
+.turn-failed { border-left-color: var(--warn); }
+.turn-failed .turn-text, .turn-failed .turn-who { color: var(--warn); }
+.turn-pending .turn-text { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+.turn-pending i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 10px rgba(255, 122, 26, 0.6);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.turn-sources { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.turn-sources a {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: 11px var(--mono);
+  color: var(--muted);
+  text-decoration: none;
+}
+.turn-sources a:hover { border-color: var(--amber); color: var(--ink); }
+
+.chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chip {
+  padding: 7px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: 0.86rem "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  box-shadow: none;
+}
+.chip:hover:not(:disabled) { border-color: var(--amber); background: var(--amber-soft); filter: none; box-shadow: none; }
+.chip:disabled { background: transparent; }
+
+.chat-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+.chat-form textarea {
+  font: inherit;
+  font-size: 1rem;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 48px;
+  min-width: 0;
+}
+.chat-form textarea:focus { border-color: var(--amber); outline: none; box-shadow: 0 0 0 3px var(--amber-soft); }
+.chat-form textarea::placeholder { color: var(--faint); }
+.chat-form textarea:disabled { opacity: 0.6; }
+.chat + .warn, .chat .warn { margin-top: 10px; }
+@media (max-width: 560px) {
+  .chat { padding: 16px; }
+  .chat-form { grid-template-columns: 1fr; }
+  .turn-user { justify-self: stretch; }
+}
