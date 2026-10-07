@@ -29,7 +29,7 @@ candidate agent might propose; an unlabelled proposal fails the test until you l
 
 ## Recording and scoring the LLM
 `npm run test:live` (needs `OPENCODE_API_KEY` in `.dev.vars`; the category case also
-uses Serper searches) writes `llm/<file>.json`: three matcher runs per product and
+uses Firecrawl searches) writes `llm/<file>.json`: three matcher runs per product and
 one candidate run per category case. `npm test` then scores them in
 `test/golden-llm.test.ts`:
 - no false merges in any of the three runs (matching something that isn't the same

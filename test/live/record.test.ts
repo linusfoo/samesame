@@ -67,7 +67,7 @@ describe.skipIf(!env.OPENCODE_API_KEY)("record golden LLM answers", () => {
   }
 
   for (const { name, golden } of categoryCases()) {
-    it.skipIf(!env.SERPER_API_KEY)(`candidates: ${golden.input.query}`, async () => {
+    it.skipIf(!env.FIRECRAWL_API_KEY)(`candidates: ${golden.input.query}`, async () => {
       const outcome = await runCandidates(golden.input, {
         model: openCodeModel(env.OPENCODE_API_KEY),
         tools: liveTools(env),

@@ -77,13 +77,13 @@ export function App() {
 
 function Footer({ state }: { state: ItemState }) {
   const c = state.sourcesConfigured;
-  const missing = [!c.llm && "OPENCODE_API_KEY", !c.search && "SERPER_API_KEY"].filter(Boolean);
+  const missing = [!c.llm && "OPENCODE_API_KEY", !c.search && "FIRECRAWL_API_KEY"].filter(Boolean);
   const left = state.quotaLeft;
   return (
     <footer className="footer">
       {left && (
         <p>
-          Left today for new searches: {left.serper} web searches and {left.jina + left.browser} page reads. The rest
+          Left today for new searches: {left.firecrawl} web searches and {left.jina + left.browser} page reads. The rest
           is kept for watchlist checks.
         </p>
       )}
@@ -93,7 +93,7 @@ function Footer({ state }: { state: ItemState }) {
         </p>
       )}
       {!c.browser && (
-        <p>Optional: add CF_ACCOUNT_ID and CF_BROWSER_TOKEN for a second way to read pages a shop blocks.</p>
+        <p>Optional: add CF_ACCOUNT_ID and CF_BROWSER_TOKEN for one more way to read pages a shop blocks.</p>
       )}
     </footer>
   );

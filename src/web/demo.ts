@@ -25,7 +25,7 @@ const base: ItemState = {
   startedAt: t0,
   finishedAt: t0 + 72_000,
   quota: null,
-  quotaLeft: { serper: 21, jina: 63, browser: 12 },
+  quotaLeft: { firecrawl: 21, jina: 63, browser: 12 },
   sourcesConfigured: { search: true, browser: true, llm: true },
 };
 

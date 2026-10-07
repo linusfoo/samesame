@@ -1,26 +1,29 @@
 /**
  * Build the tool set an agent sees: web_search and read_page.
  *
- * Every call goes through the daily quota gate. web_search uses Serper.
- * read_page tries Jina Reader first and falls back to Browser Rendering, and
- * only opens http(s) URLs on hosts that came back from a search in this run.
+ * Every call goes through the daily quota gate. web_search uses Firecrawl.
+ * read_page tries Jina Reader, then Firecrawl scrape, then Browser Rendering,
+ * and only opens http(s) URLs on hosts that came back from a search in this run.
  */
 
 import type { Tool } from "../../core/quota";
+import { formatFirecrawlSearch, type FirecrawlSearchResponse } from "./firecrawl";
 import { asUntrusted, type AgentTool } from "./registry";
-import { formatSerper, type SerperResponse } from "./serper";
 
 export type QuotaGate = { tryUse(tool: Tool): boolean };
 
 /** IO the tools need; null means that source is not configured. */
 export type ToolIO = {
-  search: ((query: string) => Promise<SerperResponse>) | null;
+  search: ((query: string) => Promise<FirecrawlSearchResponse>) | null;
   readPage: ((url: string) => Promise<string>) | null;
+  scrapePage: ((url: string) => Promise<string>) | null;
   browserMarkdown: ((url: string) => Promise<string>) | null;
 };
 
 /** Below this, an extraction is treated as failed (blocked or empty page). */
 const MIN_PAGE_CHARS = 200;
+
+type Reader = { name: string; tool: Tool; read: ((url: string) => Promise<string>) | null; label: (url: string) => string };
 
 export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
   const seenHosts = new Set<string>();
@@ -31,12 +34,18 @@ export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
     }
   };
 
+  const readers: Reader[] = [
+    { name: "reader", tool: "jina", read: io.readPage, label: (u) => u },
+    { name: "firecrawl", tool: "firecrawl", read: io.scrapePage, label: (u) => `${u} (firecrawl)` },
+    { name: "browser", tool: "browser", read: io.browserMarkdown, label: (u) => `${u} (browser)` },
+  ];
+
   const tools: AgentTool[] = [];
 
   tools.push({
     name: "web_search",
     description:
-      "Search Google from Singapore. Returns titles, URLs and snippets (sometimes prices and ratings). Use for finding where a product is sold in Singapore, and for reviews.",
+      "Search the web from Singapore. Returns titles, URLs and snippets (sometimes prices). Use for finding where a product is sold in Singapore, and for reviews.",
     parameters: {
       type: "object",
       properties: { query: { type: "string", description: "Search query" } },
@@ -45,9 +54,9 @@ export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
     async run(args) {
       const query = String(args.query ?? "").trim();
       if (!query) throw new Error("query is required");
-      if (!io.search) throw new Error("search is not set up (SERPER_API_KEY)");
-      if (!quota.tryUse("serper")) throw new Error("no search budget left today");
-      const { text, urls } = formatSerper(await io.search(query));
+      if (!io.search) throw new Error("search is not set up (FIRECRAWL_API_KEY)");
+      if (!quota.tryUse("firecrawl")) throw new Error("no search budget left today");
+      const { text, urls } = formatFirecrawlSearch(await io.search(query));
       remember(urls);
       return asUntrusted("web search", text);
     },
@@ -69,22 +78,14 @@ export function buildTools(io: ToolIO, quota: QuotaGate): AgentTool[] {
       if (!seenHosts.has(host)) throw new Error(`${host} did not appear in any search result`);
 
       const errors: string[] = [];
-      if (io.readPage && quota.tryUse("jina")) {
+      for (const r of readers) {
+        if (!r.read || !quota.tryUse(r.tool)) continue;
         try {
-          const text = await io.readPage(url);
-          if (text.length >= MIN_PAGE_CHARS) return asUntrusted(url, text);
-          errors.push("reader: page too short");
+          const text = await r.read(url);
+          if (text.length >= MIN_PAGE_CHARS) return asUntrusted(r.label(url), text);
+          errors.push(`${r.name}: page too short`);
         } catch (err) {
-          errors.push(`reader: ${String(err)}`);
-        }
-      }
-      if (io.browserMarkdown && quota.tryUse("browser")) {
-        try {
-          const text = await io.browserMarkdown(url);
-          if (text.length >= MIN_PAGE_CHARS) return asUntrusted(`${url} (browser)`, text);
-          errors.push("browser: page too short");
-        } catch (err) {
-          errors.push(`browser: ${String(err)}`);
+          errors.push(`${r.name}: ${String(err)}`);
         }
       }
       throw new Error(errors.length ? errors.join("; ") : "no page-reading budget left today");

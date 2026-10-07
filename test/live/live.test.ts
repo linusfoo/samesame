@@ -1,5 +1,5 @@
 /**
- * The three simulated searches, run for real: OpenCode Go, Serper,
+ * The three simulated searches, run for real: OpenCode Go, Firecrawl,
  * Jina Reader and Browser Rendering, with keys from .dev.vars. Uses real quota.
  *
  *   npm run test:live
@@ -24,7 +24,7 @@ const FIVE_MINUTES = 5 * 60_000;
 
 const env = readDevVars();
 
-describe.skipIf(!env.OPENCODE_API_KEY || !env.SERPER_API_KEY)("live searches", () => {
+describe.skipIf(!env.OPENCODE_API_KEY || !env.FIRECRAWL_API_KEY)("live searches", () => {
   for (const input of PRODUCTS) {
     it(
       input.query,

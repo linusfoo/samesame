@@ -22,7 +22,7 @@ import {
 import { fetchMarkdown } from "../tools/browser";
 import { buildTools, type ToolIO } from "../tools/index";
 import { fetchJina } from "../tools/jina";
-import { fetchSerper } from "../tools/serper";
+import { fetchFirecrawlScrape, fetchFirecrawlSearch } from "../tools/firecrawl";
 
 export type ItemStatus = "idle" | "running" | "choosing" | "done" | "error";
 
@@ -113,10 +113,10 @@ export class ItemAgent extends Agent<Env, ItemState> {
     const parsed = parseResearchInput(raw);
     if (!parsed.ok) return { started: false, reason: parsed.reason };
     if (!this.env.OPENCODE_API_KEY) return { started: false, reason: "OPENCODE_API_KEY is not set" };
-    if (!this.env.SERPER_API_KEY) return { started: false, reason: "SERPER_API_KEY is not set" };
+    if (!this.env.FIRECRAWL_API_KEY) return { started: false, reason: "FIRECRAWL_API_KEY is not set" };
 
     const quota = currentQuota(this.state.quota, new Date());
-    if (!canUse(quota, "serper")) {
+    if (!canUse(quota, "firecrawl")) {
       return { started: false, reason: "today's search budget is used up; try again tomorrow" };
     }
 
@@ -262,7 +262,8 @@ export class ItemAgent extends Agent<Env, ItemState> {
 
   private deps(): ResearchDeps {
     const io: ToolIO = {
-      search: this.env.SERPER_API_KEY ? (q) => fetchSerper(this.env.SERPER_API_KEY!, q) : null,
+      search: this.env.FIRECRAWL_API_KEY ? (q) => fetchFirecrawlSearch(this.env.FIRECRAWL_API_KEY!, q) : null,
+      scrapePage: this.env.FIRECRAWL_API_KEY ? (u) => fetchFirecrawlScrape(this.env.FIRECRAWL_API_KEY!, u) : null,
       readPage: (u) => fetchJina(u, this.env.JINA_API_KEY),
       browserMarkdown:
         this.env.CF_ACCOUNT_ID && this.env.CF_BROWSER_TOKEN
@@ -299,7 +300,7 @@ export class ItemAgent extends Agent<Env, ItemState> {
 
   private sourcesConfigured(): ItemState["sourcesConfigured"] {
     return {
-      search: Boolean(this.env.SERPER_API_KEY),
+      search: Boolean(this.env.FIRECRAWL_API_KEY),
       browser: Boolean(this.env.CF_ACCOUNT_ID && this.env.CF_BROWSER_TOKEN),
       llm: Boolean(this.env.OPENCODE_API_KEY),
     };

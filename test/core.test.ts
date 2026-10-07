@@ -217,32 +217,32 @@ describe("quota", () => {
   it("rolls over at Singapore midnight", () => {
     expect(sgDay(morning)).toBe("2026-10-07");
     expect(sgDay(nextDay)).toBe("2026-10-08");
-    const used = consume(emptyQuota(morning), "serper");
-    expect(currentQuota(used, nextDay).used.serper).toBe(0);
+    const used = consume(emptyQuota(morning), "firecrawl");
+    expect(currentQuota(used, nextDay).used.firecrawl).toBe(0);
   });
   it("refuses once the daily limit is reached", () => {
     let state = emptyQuota(morning);
-    const limits = { serper: 2, jina: 1, browser: 1 };
-    state = consume(consume(state, "serper"), "serper");
-    expect(canUse(state, "serper", "watch", limits)).toBe(false);
+    const limits = { firecrawl: 2, jina: 1, browser: 1 };
+    state = consume(consume(state, "firecrawl"), "firecrawl");
+    expect(canUse(state, "firecrawl", "watch", limits)).toBe(false);
     expect(canUse(state, "jina", "watch", limits)).toBe(true);
-    expect(remaining(state, "watch", limits)).toEqual({ serper: 0, jina: 1, browser: 1 });
+    expect(remaining(state, "watch", limits)).toEqual({ firecrawl: 0, jina: 1, browser: 1 });
   });
   it("keeps 30% of each limit for watchlist re-checks", () => {
-    const limits = { serper: 10, jina: 10, browser: 10 };
+    const limits = { firecrawl: 10, jina: 10, browser: 10 };
     let state = emptyQuota(morning);
-    for (let i = 0; i < 7; i++) state = consume(state, "serper");
-    expect(canUse(state, "serper", "search", limits)).toBe(false);
-    expect(canUse(state, "serper", "watch", limits)).toBe(true);
-    expect(remaining(state, "search", limits).serper).toBe(0);
-    expect(remaining(state, "watch", limits).serper).toBe(3);
+    for (let i = 0; i < 7; i++) state = consume(state, "firecrawl");
+    expect(canUse(state, "firecrawl", "search", limits)).toBe(false);
+    expect(canUse(state, "firecrawl", "watch", limits)).toBe(true);
+    expect(remaining(state, "search", limits).firecrawl).toBe(0);
+    expect(remaining(state, "watch", limits).firecrawl).toBe(3);
   });
   it("starts fresh when saved counts use tool names that no longer exist", () => {
     const old = { day: sgDay(morning), used: { brave: 5, tavily: 2, browser: 1 } } as unknown as QuotaState;
     expect(currentQuota(old, morning)).toEqual(emptyQuota(morning));
   });
   it("gives new searches 70% of the real daily limits by default", () => {
-    expect(remaining(emptyQuota(morning))).toEqual({ serper: 28, jina: 70, browser: 14 });
+    expect(remaining(emptyQuota(morning))).toEqual({ firecrawl: 21, jina: 70, browser: 14 });
   });
 });
 
@@ -262,7 +262,7 @@ describe("search requests", () => {
 });
 
 describe("candidate picks", () => {
-  const plenty = { serper: 28, jina: 70, browser: 14 };
+  const plenty = { firecrawl: 28, jina: 70, browser: 14 };
   it("allows one or two picks from the list", () => {
     expect(checkPicks([0, 2], 3, plenty)).toEqual({ ok: true, value: [0, 2] });
     expect(checkPicks([1, 1], 3, plenty)).toEqual({ ok: true, value: [1] });
@@ -274,11 +274,11 @@ describe("candidate picks", () => {
     expect(checkPicks("0", 3, plenty)).toEqual({ ok: false, reason: "pick at least one product" });
   });
   it("refuses when today's search share can't pay for every pick", () => {
-    expect(checkPicks([0, 1], 3, { serper: 7, jina: 70, browser: 14 })).toEqual({
+    expect(checkPicks([0, 1], 3, { firecrawl: 7, jina: 70, browser: 14 })).toEqual({
       ok: false,
       reason: "today's search budget covers 1 more product; pick 1",
     });
-    expect(checkPicks([0], 3, { serper: 2, jina: 70, browser: 14 })).toEqual({
+    expect(checkPicks([0], 3, { firecrawl: 2, jina: 70, browser: 14 })).toEqual({
       ok: false,
       reason: "today's search budget is used up; try again tomorrow",
     });

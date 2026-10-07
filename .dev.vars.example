@@ -1,7 +1,7 @@
 # Copy to .dev.vars and fill in. Never commit .dev.vars.
 # Required: the LLM and search.
 OPENCODE_API_KEY=
-SERPER_API_KEY=
+FIRECRAWL_API_KEY=
 # Optional: Jina Reader reads pages without a key; a free key raises its rate limit.
 JINA_API_KEY=
 # Optional fallback page reader (free Cloudflare account, no card).

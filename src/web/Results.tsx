@@ -69,7 +69,7 @@ function Candidates({ state, actions }: { state: ItemState; actions: Actions }) 
   const [notice, setNotice] = useState<string | null>(null);
   const candidates = state.candidates ?? [];
   const locked = state.status === "running";
-  const left = state.quotaLeft ? state.quotaLeft.serper : null;
+  const left = state.quotaLeft ? state.quotaLeft.firecrawl : null;
 
   useEffect(() => setPicked(state.picked), [state.picked]);
 
