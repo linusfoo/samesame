@@ -129,6 +129,27 @@ describe("comparable variants", () => {
   });
 });
 
+describe("shipping and vouchers", () => {
+  it("keeps them beside the base price without adding them in", () => {
+    const got = matchListing({ modelNumber: "WH-1000XM6/B", variant: {} }, {
+      source: "shopee.sg",
+      url: "https://shopee.sg/x",
+      title: "Sony WH-1000XM6/B",
+      priceText: "S$529.00",
+      shippingText: " S$3.99 shipping ",
+      vouchers: ["S$20 off min spend S$300", " ", "Coins cashback", "4th"],
+    });
+    expect(got.price).toBe(529);
+    expect(got.shippingText).toBe("S$3.99 shipping");
+    expect(got.vouchers).toEqual(["S$20 off min spend S$300", "Coins cashback", "4th"]);
+  });
+  it("defaults to none when the agent reports nothing", () => {
+    const got = matchListing({ modelNumber: null, variant: {} }, { source: "a", url: "https://a.sg", title: "x" });
+    expect(got.shippingText).toBe("");
+    expect(got.vouchers).toEqual([]);
+  });
+});
+
 describe("LLM fallback", () => {
   const target = { modelNumber: null, variant: {} };
   const listing = matchListing(target, {

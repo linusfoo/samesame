@@ -18,7 +18,7 @@ import { buildTools, type QuotaGate, type ToolIO } from "../src/worker/tools/ind
 import { MATCHER_SYSTEM, runResearch, type ResearchInput } from "../src/worker/research";
 import { SUBMIT_TOOL } from "../src/worker/agents/subagent";
 import type { Model, ModelRequest, ToolCall } from "../src/worker/llm";
-import type { DiscoveryResult, LlmMatchReply } from "../src/core/schemas";
+import type { DiscoveryReply, LlmMatchReply } from "../src/core/schemas";
 import type { Tool } from "../src/core/quota";
 
 type Scenario = {
@@ -28,7 +28,7 @@ type Scenario = {
   browserPages?: Record<string, string>;
   /** Tool calls the scripted model makes before submitting. */
   plan: { name: string; args: Record<string, unknown> }[];
-  discovery: DiscoveryResult;
+  discovery: DiscoveryReply;
   matcher?: LlmMatchReply;
 };
 
@@ -72,7 +72,7 @@ const sony: Scenario = {
     listings: [
       { source: "shopee.sg", url: "https://shopee.sg/sony-xm6-b", title: "Sony WH-1000XM6/B Black - 1 Year Sony Singapore Warranty", priceText: "S$579.00", modelNumber: "WH-1000XM6/B", condition: "new", warranty: "local", isBundle: false, variant: { color: "black" } },
       { source: "lazada.sg", url: "https://www.lazada.sg/products/xm6-silver", title: "SONY WH1000XM6 Headphone Silver", priceText: "S$549.00", modelNumber: "WH1000XM6", condition: "new", warranty: "unknown", isBundle: false, variant: { color: "silver" } },
-      { source: "amazon.sg", url: "https://www.amazon.sg/dp/XM6B", title: "Sony WH-1000XM6/B Premium Wireless Headphones, Black", priceText: "S$629.00 S$529.00", modelNumber: "WH-1000XM6/B", condition: "new", warranty: "unknown", isBundle: false, variant: { color: "black" } },
+      { source: "amazon.sg", url: "https://www.amazon.sg/dp/XM6B", title: "Sony WH-1000XM6/B Premium Wireless Headphones, Black", priceText: "S$629.00 S$529.00", modelNumber: "WH-1000XM6/B", condition: "new", warranty: "unknown", isBundle: false, variant: { color: "black" }, shippingText: "Free delivery over S$60", vouchers: ["S$30 off with code SONY30"] },
       { source: "challenger.sg", url: "https://www.challenger.sg/xm5", title: "Sony WH-1000XM5 Black", priceText: "S$399.00", modelNumber: "WH-1000XM5", condition: "new", warranty: "unknown", isBundle: false, variant: { color: "black" } },
       { source: "qoo10.sg", url: "https://www.qoo10.sg/item/xm6-export", title: "[Export Set] Sony WH-1000XM6 Black", priceText: "S$459.00", modelNumber: null, condition: "new", warranty: "unknown", isBundle: false, variant: {} },
     ],
@@ -250,7 +250,10 @@ describe("simulated search 1: Sony WH-1000XM6 (model numbers everywhere)", async
     expect(qoo10.status).toBe("same");
   });
   it("reads the sale price, not the strike-through price", () => {
-    expect(outcome.listings.find((l) => l.source === "amazon.sg")!.price).toBe(529);
+    const amazon = outcome.listings.find((l) => l.source === "amazon.sg")!;
+    expect(amazon.price).toBe(529);
+    expect(amazon.shippingText).toBe("Free delivery over S$60");
+    expect(amazon.vouchers).toEqual(["S$30 off with code SONY30"]);
   });
   it("lists the cheapest matched listing first and never called the LLM matcher", () => {
     expect(outcome.groups.matched[0].price).toBe(459);

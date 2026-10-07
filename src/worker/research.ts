@@ -71,7 +71,8 @@ How to work:
 
 Rules for submit_result:
 - Report only listings that appeared in tool output. Never invent URLs, prices or model numbers.
-- priceText: copy the price exactly as shown, including the currency (e.g. "S$1,299.00"). Use "" if no price was shown.
+- priceText: copy the item's own price exactly as shown, including the currency (e.g. "S$1,299.00"), without shipping. Use "" if no price was shown.
+- shippingText and vouchers: copy what the listing shows ("Free shipping", "S$20 off min spend S$300"). Leave empty if not shown; never guess.
 - modelNumber: the manufacturer model code only if the listing shows it (e.g. "WH-1000XM6/B", "SM-S938B"), else null.
 - product.modelNumber: the canonical model number of the requested product if you know it from the results, else null.
 - Include close variants and similar models you saw too; matching happens later.

@@ -43,6 +43,9 @@ export type ListingInput = {
   warranty?: Warranty;
   isBundle?: boolean;
   variant?: Variant;
+  /** Shown beside the price for the shopper to weigh; never added to it. */
+  shippingText?: string;
+  vouchers?: string[];
 };
 
 export type MatchStatus =
@@ -65,6 +68,8 @@ export type MatchedListing = ListingInput & {
   warranty: Warranty;
   isBundle: boolean;
   variant: Variant;
+  shippingText: string;
+  vouchers: string[];
   /** For variants: what differs from the target. */
   differs: Difference[];
   pinned: Pinned;
@@ -97,6 +102,8 @@ export function matchListing(target: Target, listing: ListingInput): MatchedList
         : listing.warranty,
     isBundle: listing.isBundle ?? detectBundle(listing.title),
     variant,
+    shippingText: listing.shippingText?.trim() ?? "",
+    vouchers: (listing.vouchers ?? []).map((v) => v.trim()).filter(Boolean).slice(0, 3),
     confidence: null,
     pinned: target.pinned ?? NOT_PINNED,
   };

@@ -26,6 +26,16 @@ export const ReportedListingSchema = z.object({
   warranty: z.enum(["local", "export", "parallel_import", "unknown"]),
   isBundle: z.boolean().describe("True if the price includes extra items (case, lens, gifts)"),
   variant: VariantSchema,
+  shippingText: z
+    .string()
+    .max(80)
+    .default("")
+    .describe('Shipping exactly as shown, e.g. "Free shipping" or "S$3.99 shipping". Empty if not shown.'),
+  vouchers: z
+    .array(z.string().max(80))
+    .max(3)
+    .default([])
+    .describe('Vouchers or promos shown on the listing, as written, e.g. "S$20 off min spend S$300".'),
 });
 
 export const DiscoveryResultSchema = z.object({
@@ -58,6 +68,8 @@ export const LlmMatchResultSchema = z.object({
 
 export type ReportedListing = z.infer<typeof ReportedListingSchema>;
 export type DiscoveryResult = z.infer<typeof DiscoveryResultSchema>;
+/** What the model sends; shipping and vouchers may be left out. */
+export type DiscoveryReply = z.input<typeof DiscoveryResultSchema>;
 export type LlmMatchResult = z.infer<typeof LlmMatchResultSchema>;
 /** What the model sends; `differs` may be left out. */
 export type LlmMatchReply = z.input<typeof LlmMatchResultSchema>;
