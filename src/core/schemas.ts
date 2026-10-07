@@ -77,7 +77,20 @@ export const LlmMatchResultSchema = z.object({
   ),
 });
 
+export const ChatAnswerSchema = z.object({
+  answer: z
+    .string()
+    .min(1)
+    .max(2000)
+    .describe("Plain-text answer for the shopper, short, no markdown. Say plainly when the data doesn't say."),
+  sources: z
+    .array(z.string())
+    .max(8)
+    .describe("URLs the answer relies on, copied exactly from the gathered data or from tool output. Empty if none."),
+});
+
 export type ReportedListing = z.infer<typeof ReportedListingSchema>;
+export type ChatAnswer = z.infer<typeof ChatAnswerSchema>;
 export type Candidate = z.infer<typeof CandidateSchema>;
 export type CandidatesResult = z.infer<typeof CandidatesResultSchema>;
 export type DiscoveryResult = z.infer<typeof DiscoveryResultSchema>;
