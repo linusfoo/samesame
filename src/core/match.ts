@@ -84,7 +84,8 @@ export type MatchedListing = ListingInput & {
 export function matchListing(target: Target, listing: ListingInput): MatchedListing {
   const text = [listing.title, listing.modelNumber ?? ""].join(" ");
   const detected = detectVariant(listing.title);
-  const variant = { ...detected, ...stripEmpty(listing.variant) };
+  // Agents report variants in shop casing ("Black"); compare them like the target's.
+  const variant = normaliseVariant({ ...detected, ...stripEmpty(listing.variant) });
   const price = parsePrice(listing.priceText ?? "");
 
   const base = {
@@ -125,9 +126,30 @@ function decideByModelNumber(
   const codes = extractModelCodes(text);
   const hit = codes.find((c) => sameFamily(c.family, targetCode.family));
   if (hit) {
+    // "WH-1000XM6 / WH-1000XM5": one listing selling several models of a range, so the
+    // price shown may be for another one.
+    const siblings = codes.filter((c) => !sameFamily(c.family, targetCode.family) && looksRelated(c.family, targetCode.family));
+    if (siblings.length > 0) {
+      return {
+        status: "unconfirmed",
+        reason: `lists several models (${[hit, ...siblings].map((c) => c.raw).join(", ")}); the price may be for another`,
+        differs: [],
+      };
+    }
     const diffs = variantDifferences(normaliseVariant(target.variant), variant);
     // Suffixes are colour or region codes (the family key strips them), so they count as colour.
-    if (hit.suffix && targetCode.suffix && hit.suffix !== targetCode.suffix && !diffs.some((d) => d.field === "color")) {
+    // A suffix that only extends the other (/B vs /BME, black plus a region code), or one
+    // on a listing whose colour is known to match, is not a colour difference.
+    const want = normaliseVariant(target.variant).color;
+    const sameColourKnown = Boolean(want && variant.color && want === variant.color);
+    const extends_ = (a: string, b: string) => a.startsWith(b) || b.startsWith(a);
+    if (
+      hit.suffix &&
+      targetCode.suffix &&
+      !extends_(hit.suffix, targetCode.suffix) &&
+      !sameColourKnown &&
+      !diffs.some((d) => d.field === "color")
+    ) {
       diffs.push({ field: "color", text: `model suffix /${hit.suffix} vs /${targetCode.suffix}` });
     }
     if (diffs.length > 0) {
@@ -200,7 +222,7 @@ function finish(listing: Omit<MatchedListing, "comparable">): MatchedListing {
 
 function normaliseVariant(v: Variant): Variant {
   return {
-    ...(v.color ? { color: v.color.toLowerCase().replace("grey", "gray") } : {}),
+    ...(v.color ? { color: v.color.trim().toLowerCase().replace("grey", "gray") } : {}),
     ...(v.storage ? { storage: v.storage.toUpperCase().replace(/\s/g, "") } : {}),
     ...(v.size ? { size: v.size.toLowerCase().replace(/\s|-?inch(es)?|"/g, "").replace(/(in)?$/, "in") } : {}),
   };

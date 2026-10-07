@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyLlmDecision, matchListing, type Target } from "../src/core/match";
-import { describeMatch, railLayout, whyNotCounted } from "../src/web/present";
+import { describeMatch, productName, railLayout, whyNotCounted } from "../src/web/present";
 
 const target: Target = { modelNumber: "SM-S938B", variant: { storage: "256GB" }, pinned: { storage: true, size: false } };
 const mk = (title: string, priceText: string, url = title) =>
@@ -44,5 +44,23 @@ describe("why a listing doesn't count", () => {
     expect(describeMatch(llm)).toBe("Matched by name, 82% sure: same name and storage.");
     expect(describeMatch(mk("SM-S938B 256GB", "S$1,500"))).toBe("Model number SM-S938B matches.");
     expect(describeMatch(mk("SM-S938B 512GB", "S$1,800"))).toBe("Model number SM-S938B: storage 512GB vs 256GB.");
+  });
+});
+
+describe("product name", () => {
+  it("doesn't repeat a brand the name already starts with", () => {
+    expect(productName({ brand: "Sony", name: "Sony WH-1000XM6 Wireless Headphones" })).toBe("Sony WH-1000XM6 Wireless Headphones");
+    expect(productName({ brand: "Sony", name: "WH-1000XM6" })).toBe("Sony WH-1000XM6");
+    expect(productName({ brand: "", name: "WH-1000XM6" })).toBe("WH-1000XM6");
+  });
+});
+
+describe("listings naming several models", () => {
+  it("say why they aren't confirmed", () => {
+    const l = matchListing({ modelNumber: "WH-1000XM6/B", variant: {} }, {
+      source: "lazada.sg", url: "https://lazada.sg/x", title: "SONY WH-1000XM6 / WH-1000XM5 Headphone", priceText: "S$393.00",
+    });
+    expect(describeMatch(l)).toBe("Lists several models (WH-1000XM6, WH-1000XM5); the price may be for another.");
+    expect(whyNotCounted(l)).toBe("not confirmed as this product");
   });
 });

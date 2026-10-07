@@ -119,6 +119,27 @@ describe("comparable variants", () => {
     const got = mk(phone({ storage: false, size: false }), "Galaxy S25 Ultra 512GB Titanium Black SM-S938B");
     expect(got.comparable).toBe(true);
   });
+  it("ignores letter case in colours the agent reports", () => {
+    const got = matchListing({ modelNumber: "WH-1000XM6/B", variant: { color: "black" } }, {
+      source: "courts.com.sg",
+      url: "https://courts.com.sg/x",
+      title: "SONY Wireless Noise Cancelling Headphone (black) WH-1000XM6/BME",
+      priceText: "S$509.00",
+      variant: { color: "Black " },
+    });
+    expect(got.status).toBe("same");
+  });
+  it("doesn't trust a listing that sells several models of the range", () => {
+    const got = matchListing({ modelNumber: "WH-1000XM6/B", variant: {} }, {
+      source: "lazada.sg",
+      url: "https://lazada.sg/x",
+      title: "SONY WH-1000XM6 / WH-1000XM5 Black /Silver Headphone",
+      priceText: "S$393.00",
+    });
+    expect(got.status).toBe("unconfirmed");
+    expect(got.reason).toMatch(/several models/);
+    expect(got.comparable).toBe(false);
+  });
   it("treats a model suffix difference as colour", () => {
     const got = mk({ modelNumber: "WH-1000XM6/B", variant: {} }, "Sony WH-1000XM6/S headphones");
     expect(got.status).toBe("variant");

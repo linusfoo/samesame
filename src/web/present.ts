@@ -19,6 +19,13 @@ const CONDITION: Record<MatchedListing["condition"], string> = {
   used: "used",
 };
 
+/** "Sony WH-1000XM6", without repeating a brand the name already starts with. */
+export function productName(p: { brand: string; name: string }): string {
+  const brand = p.brand.trim();
+  const name = p.name.trim();
+  return brand && !name.toLowerCase().startsWith(brand.toLowerCase()) ? `${brand} ${name}` : name;
+}
+
 /** "Local warranty, new." */
 export function describeUnit(l: MatchedListing): string {
   return `${WARRANTY[l.warranty]}, ${CONDITION[l.condition]}${l.isBundle ? ", sold as a bundle" : ""}.`;
@@ -31,7 +38,10 @@ export function describeMatch(l: MatchedListing): string {
     const text = /^(model number|different model)/.test(l.reason) ? l.reason : `model number ${l.reason}`;
     return `${text[0].toUpperCase()}${text.slice(1)}.`;
   }
-  if (l.confidence === null) return "Not checked yet.";
+  if (l.confidence === null) {
+    // Set aside by the model-number check itself, e.g. a listing naming several models.
+    return l.status === "unconfirmed" ? `${l.reason[0].toUpperCase()}${l.reason.slice(1)}.` : "Not checked yet.";
+  }
   const reason = l.reason.replace(/^LLM:\s*/, "");
   return `Matched by name, ${Math.round(l.confidence * 100)}% sure: ${reason}.`;
 }

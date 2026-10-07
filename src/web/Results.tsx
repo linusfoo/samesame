@@ -4,7 +4,7 @@ import type { MatchedListing } from "../core/match";
 import { MAX_PICKS } from "../core/request";
 import { DEFAULT_CALLS_PER_RUN } from "../core/quota";
 import { formatSgd } from "../core/price";
-import { describeMatch, describeUnit, whyNotCounted } from "./present";
+import { describeMatch, describeUnit, productName, whyNotCounted } from "./present";
 import { PriceRail } from "./PriceRail";
 import type { Actions } from "./App";
 
@@ -122,7 +122,7 @@ function Product({ result: r, showStatus }: { result: ProductResult; showStatus:
   const g = r.groups;
   const all = g ? [...g.matched, ...g.variants] : [];
   const counting = all.filter((l) => l.comparable);
-  const name = r.product ? `${r.product.brand} ${r.product.name}` : r.query;
+  const name = r.product ? productName(r.product) : r.query;
 
   return (
     <section className="product" aria-label={name}>
@@ -226,7 +226,7 @@ const AGENT: Record<string, string> = { discovery: "Price search", matcher: "Mat
 
 function RunLog({ state }: { state: ItemState }) {
   const tools = state.trace.filter((e) => e.kind === "tool" && !e.detail.startsWith("refused")).length;
-  const names = new Map(state.products.map((p) => [p.key, p.product ? `${p.product.brand} ${p.product.name}` : p.query]));
+  const names = new Map(state.products.map((p) => [p.key, p.product ? productName(p.product) : p.query]));
   return (
     <details className="runlog">
       <summary>
