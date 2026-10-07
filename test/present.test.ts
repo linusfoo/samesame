@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyLlmDecision, matchListing, type Target } from "../src/core/match";
-import { describeMatch, productName, railLayout, whyNotCounted } from "../src/web/present";
+import { describeMatch, productName, railLayout, railTicks, whyNotCounted } from "../src/web/present";
 
 const target: Target = { modelNumber: "SM-S938B", variant: { storage: "256GB" }, pinned: { storage: true, size: false } };
 const mk = (title: string, priceText: string, url = title) =>
@@ -27,6 +27,24 @@ describe("price rail layout", () => {
   });
   it("is empty when nothing counts", () => {
     expect(railLayout([mk("SM-S938B 256GB refurbished", "S$900")], 400, 50).tags).toEqual([]);
+  });
+});
+
+describe("price rail ruler", () => {
+  it("puts round SGD ticks inside the price range on the rail's scale", () => {
+    expect(railTicks(429, 479, 500)).toEqual([
+      { value: 430, x: 10 },
+      { value: 440, x: 110 },
+      { value: 450, x: 210 },
+      { value: 460, x: 310 },
+      { value: 470, x: 410 },
+    ]);
+  });
+  it("uses 1-2-5 steps for wide ranges", () => {
+    expect(railTicks(1000, 2000, 100).map((t) => t.value)).toEqual([1000, 1200, 1400, 1600, 1800, 2000]);
+  });
+  it("shows a single tick when every price is the same", () => {
+    expect(railTicks(300, 300, 400)).toEqual([{ value: 300, x: 0 }]);
   });
 });
 

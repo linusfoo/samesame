@@ -85,3 +85,20 @@ export function railLayout(listings: MatchedListing[], width: number, minGap: nu
   });
   return { tags, min, max, rows: lastX.length };
 }
+
+/**
+ * Round-number ticks for the rail's SGD ruler, inside [min, max] and placed on
+ * the same `width` px scale as `railLayout`. Aims for about `target` ticks.
+ */
+export function railTicks(min: number, max: number, width: number, target = 5): { value: number; x: number }[] {
+  const span = max - min;
+  if (span <= 0) return [{ value: min, x: 0 }];
+  const raw = span / Math.max(1, target);
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = ([1, 2, 5, 10].find((m) => m * mag >= raw) ?? 10) * mag;
+  const ticks: { value: number; x: number }[] = [];
+  for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) {
+    ticks.push({ value: Math.round(v * 100) / 100, x: ((v - min) / span) * width });
+  }
+  return ticks;
+}
