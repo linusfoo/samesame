@@ -216,8 +216,20 @@ describe("quota", () => {
     let state = emptyQuota(morning);
     const limits = { brave: 2, tavily: 1, browser: 1 };
     state = consume(consume(state, "brave"), "brave");
-    expect(canUse(state, "brave", limits)).toBe(false);
-    expect(canUse(state, "tavily", limits)).toBe(true);
-    expect(remaining(state, limits)).toEqual({ brave: 0, tavily: 1, browser: 1 });
+    expect(canUse(state, "brave", "watch", limits)).toBe(false);
+    expect(canUse(state, "tavily", "watch", limits)).toBe(true);
+    expect(remaining(state, "watch", limits)).toEqual({ brave: 0, tavily: 1, browser: 1 });
+  });
+  it("keeps 30% of each limit for watchlist re-checks", () => {
+    const limits = { brave: 10, tavily: 10, browser: 10 };
+    let state = emptyQuota(morning);
+    for (let i = 0; i < 7; i++) state = consume(state, "brave");
+    expect(canUse(state, "brave", "search", limits)).toBe(false);
+    expect(canUse(state, "brave", "watch", limits)).toBe(true);
+    expect(remaining(state, "search", limits).brave).toBe(0);
+    expect(remaining(state, "watch", limits).brave).toBe(3);
+  });
+  it("gives new searches 70% of the real daily limits by default", () => {
+    expect(remaining(emptyQuota(morning))).toEqual({ brave: 42, tavily: 21, browser: 14 });
   });
 });
